@@ -1,6 +1,6 @@
 import type { Config } from "tailwindcss";
 // Importing the plugin without 'require'
-// eslint-disable-next-line @typescript-eslint/no-var-requires, @typescript-eslint/no-unsafe-assignment
+// eslint-disable-next-line @typescript-eslint/no-require-imports
 const daisyui = require("daisyui");
 
 const config = {
