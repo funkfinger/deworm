@@ -26,12 +26,12 @@
 
 ## Authentication and API Setup
 
-- [ ] Set up Spotify OAuth authentication:
-  - [ ] Create Spotify Developer account and register application
-  - [ ] Implement OAuth flow API routes
-  - [ ] Store and manage authentication tokens securely
+- [x] Set up Spotify OAuth authentication:
+  - [x] Create Spotify Developer account and register application
+  - [x] Implement OAuth flow API routes
+  - [x] Store and manage authentication tokens securely
 - [ ] Create API routes for interacting with Spotify:
-  - [ ] Search for tracks
+  - [x] Search for tracks
   - [ ] Get track details
   - [ ] Play tracks
   - [ ] Manage user's Spotify playback
@@ -51,15 +51,15 @@
   - [ ] Confused
 - [ ] Implement core pages:
   - [x] Homepage/welcome screen (with mascot and styled button)
-  - [ ] Spotify login page/component
-  - [ ] Search page for finding earworm songs
+  - [x] Spotify login page/component
+  - [x] Search page for finding earworm songs
   - [ ] Player page for playing replacement songs
   - [ ] Results/feedback page
 - [ ] Build reusable components:
   - [x] Mascot component (supports happy/sad variants)
   - [ ] Spotify player component
-  - [ ] Search input with autocomplete
-  - [ ] Song info display
+  - [x] Search input with autocomplete
+  - [x] Song info display
   - [ ] Loading states and error handling components
   - [ ] Navigation components
 
