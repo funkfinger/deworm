@@ -45,6 +45,7 @@
 - [ ] Create the QT mascot component with different emotional states:
   - [x] Happy (default) - added to home page
   - [x] Sad - available in public/images
+  - [x] Create reusable Mascot component with tests
   - [ ] Thinking
   - [ ] Excited
   - [ ] Confused
@@ -55,6 +56,7 @@
   - [ ] Player page for playing replacement songs
   - [ ] Results/feedback page
 - [ ] Build reusable components:
+  - [x] Mascot component (supports happy/sad variants)
   - [ ] Spotify player component
   - [ ] Search input with autocomplete
   - [ ] Song info display
@@ -114,6 +116,7 @@
   - [x] Technical requirements
   - [x] Spotify API integration guide
   - [x] DynamoDB schema design
+  - [x] Component usage guide
 - [ ] Complete code documentation with JSDoc
 - [ ] Document API endpoints
 - [ ] Write deployment instructions
