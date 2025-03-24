@@ -7,21 +7,6 @@ export default function Home() {
         Login with Spotify to get started.
       </p>
 
-      {/* daisyUI button showcase */}
-      <div className="flex flex-col items-center gap-4 mb-8">
-        <div className="flex gap-2">
-          <button className="btn btn-primary">Primary</button>
-          <button className="btn btn-secondary">Secondary</button>
-          <button className="btn btn-accent">Accent</button>
-        </div>
-        <div className="flex gap-2">
-          <button className="btn btn-info">Info</button>
-          <button className="btn btn-success">Success</button>
-          <button className="btn btn-warning">Warning</button>
-          <button className="btn btn-error">Error</button>
-        </div>
-      </div>
-
       <div className="flex flex-col items-center">
         <p className="text-sm text-gray-500 mb-2">Coming soon</p>
         <button disabled className="btn btn-primary btn-disabled">
