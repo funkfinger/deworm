@@ -1,0 +1,67 @@
+import { redirect } from "next/navigation";
+import Link from "next/link";
+import Mascot from "@/app/components/Mascot";
+import { isAuthenticated, getUserProfile } from "@/app/lib/session";
+
+export default async function Dashboard() {
+  // Check if user is authenticated
+  const authenticated = await isAuthenticated();
+
+  // If not authenticated, redirect to home page
+  if (!authenticated) {
+    redirect("/");
+  }
+
+  // Get user profile
+  const userProfile = await getUserProfile();
+
+  return (
+    <main className="flex min-h-screen flex-col items-center justify-center p-4">
+      <div className="mb-6 w-32">
+        <Mascot mood="happy" width={150} height={150} />
+      </div>
+
+      <h1 className="text-3xl font-bold mb-2">Welcome to DeWorm Dashboard</h1>
+
+      {userProfile && (
+        <div className="flex flex-col items-center mb-6">
+          <p className="mb-4">
+            Hello,{" "}
+            <span className="font-semibold">{userProfile.display_name}</span>!
+          </p>
+
+          {userProfile.images &&
+            userProfile.images.length > 0 &&
+            userProfile.images[0]?.url && (
+              <img
+                src={userProfile.images[0].url}
+                alt={userProfile.display_name}
+                className="w-16 h-16 rounded-full mb-4"
+              />
+            )}
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 gap-4 max-w-xl w-full mb-8">
+        <div className="card bg-base-200 shadow-md">
+          <div className="card-body">
+            <h2 className="card-title">Find a cure for your earworm</h2>
+            <p>
+              Search for the song that&apos;s stuck in your head, and we&apos;ll
+              help you replace it.
+            </p>
+            <div className="card-actions justify-end mt-2">
+              <Link href="/search" className="btn btn-primary btn-sm">
+                Search Songs
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <Link href="/api/auth/logout" className="btn btn-outline">
+        Logout
+      </Link>
+    </main>
+  );
+}

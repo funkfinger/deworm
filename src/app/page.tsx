@@ -1,6 +1,10 @@
+import Link from "next/link";
 import Mascot from "./components/Mascot";
+import { isAuthenticated } from "./lib/session";
 
-export default function Home() {
+export default async function Home() {
+  const authenticated = await isAuthenticated();
+
   return (
     <main className="flex min-h-screen flex-col items-center justify-center p-4">
       <div className="mb-6 w-48">
@@ -14,10 +18,15 @@ export default function Home() {
       </p>
 
       <div className="flex flex-col items-center">
-        <p className="text-sm text-gray-500 mb-2">Coming soon</p>
-        <button disabled className="btn btn-primary btn-disabled">
-          Login with Spotify
-        </button>
+        {authenticated ? (
+          <Link href="/dashboard" className="btn btn-primary">
+            Go to Dashboard
+          </Link>
+        ) : (
+          <Link href="/api/auth/login" className="btn btn-primary">
+            Login with Spotify
+          </Link>
+        )}
       </div>
     </main>
   );
