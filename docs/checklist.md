@@ -5,24 +5,24 @@
 - [x] Initialize Next.js 15 project with TypeScript, Tailwind CSS, and App Router
 - [x] Set up GitHub repository
 - [x] Create initial project structure and README
-- [ ] Install and configure additional dependencies:
-  - [ ] DaisyUI
-  - [ ] Font Awesome
-  - [ ] Biome for linting and formatting
-  - [ ] Vitest for unit testing
-  - [ ] Playwright for E2E testing
-  - [ ] Spotify Web Playback SDK
-- [ ] Set up directory structure:
-  - [ ] `/src/app` for main application code
-  - [ ] `/src/app/components` for reusable components
-  - [ ] `/tests` for unit tests
-  - [ ] `/tests/e2e` for end-to-end tests
-  - [ ] `/tests/test-results` for test reports
-- [ ] Update `.gitignore` to exclude test reports and environment files
-- [ ] Configure Tailwind with DaisyUI and design tokens
-- [ ] Enable strict TypeScript configuration
-- [ ] Set up Biome for linting and formatting
-- [ ] Configure Git pre-commit hooks for linting
+- [x] Install and configure additional dependencies:
+  - [x] DaisyUI
+  - [x] Font Awesome
+  - [x] Biome for linting and formatting
+  - [x] Vitest for unit testing
+  - [x] Playwright for E2E testing
+  - [ ] Spotify Web Playback SDK (to be done when implementing player)
+- [x] Set up directory structure:
+  - [x] `/src/app` for main application code
+  - [x] `/src/app/components` for reusable components
+  - [x] `/tests` for unit tests
+  - [x] `/tests/e2e` for end-to-end tests
+  - [x] `/tests/test-results` for test reports
+- [x] Update `.gitignore` to exclude test reports and environment files
+- [x] Configure Tailwind with DaisyUI and design tokens
+- [x] Enable strict TypeScript configuration
+- [x] Set up Biome for linting and formatting
+- [x] Configure Git pre-commit hooks for linting
 
 ## Authentication and API Setup
 
@@ -48,7 +48,7 @@
   - [ ] Excited
   - [ ] Confused
 - [ ] Implement core pages:
-  - [ ] Homepage/welcome screen
+  - [x] Homepage/welcome screen (basic placeholder)
   - [ ] Spotify login page/component
   - [ ] Search page for finding earworm songs
   - [ ] Player page for playing replacement songs
@@ -74,6 +74,10 @@
 
 ## Testing
 
+- [x] Set up testing framework and configuration:
+  - [x] Configure Vitest for unit tests
+  - [x] Set up Playwright for E2E tests
+  - [x] Create test utilities and mocks
 - [ ] Write unit tests for:
   - [ ] API functions and utilities
   - [ ] Authentication flows
@@ -104,8 +108,12 @@
 
 ## Documentation
 
+- [x] Create project documentation:
+  - [x] Implementation checklist
+  - [x] Technical requirements
+  - [x] Spotify API integration guide
+  - [x] DynamoDB schema design
 - [ ] Complete code documentation with JSDoc
-- [ ] Create developer documentation
 - [ ] Document API endpoints
 - [ ] Write deployment instructions
 - [ ] Create user manual/instructions
