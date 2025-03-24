@@ -1,6 +1,18 @@
+import Image from "next/image";
+
 export default function Home() {
   return (
     <main className="flex min-h-screen flex-col items-center justify-center p-4">
+      <div className="mb-6 w-48">
+        <Image
+          src="/images/mascot.svg"
+          alt="DeWorm Mascot"
+          width={200}
+          height={200}
+          priority
+        />
+      </div>
+
       <h1 className="text-4xl font-bold mb-6">Welcome to DeWorm</h1>
       <p className="text-center max-w-md mb-8">
         An app to help cure earworms - those songs that get stuck in your head.
