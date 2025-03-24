@@ -19,23 +19,25 @@ export default function AuthError() {
   const errorMessage = ERROR_MESSAGES[errorCode] || ERROR_MESSAGES["default"];
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center p-4">
-      <div className="mb-6 w-32">
-        <Mascot mood="sad" width={150} height={150} />
-      </div>
+    <div className="hero min-h-screen">
+      <div className="hero-content text-center">
+        <div className="max-w-md">
+          <div className="avatar">
+            <div className="w-32 mb-6 mx-auto">
+              <Mascot mood="sad" width={150} height={150} />
+            </div>
+          </div>
 
-      <h1 className="text-3xl font-bold mb-4 text-center">
-        Authentication Error
-      </h1>
+          <h1 className="text-3xl font-bold mb-4">Authentication Error</h1>
 
-      <div className="bg-error/10 border border-error/30 rounded-lg p-4 mb-6 max-w-md">
-        <p className="text-error-content text-center">{errorMessage}</p>
-      </div>
+          <div className="alert alert-error mb-6">
+            <p>{errorMessage}</p>
+          </div>
 
-      <div className="flex flex-col items-center">
-        <Link href="/" className="btn btn-primary">
-          Return to Home
-        </Link>
+          <Link href="/" className="btn btn-primary">
+            Return to Home
+          </Link>
+        </div>
       </div>
     </div>
   );

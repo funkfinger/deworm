@@ -6,28 +6,32 @@ export default async function Home() {
   const authenticated = await isAuthenticated();
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center p-4">
-      <div className="mb-6 w-48">
-        <Mascot mood="happy" width={200} height={200} priority />
-      </div>
+    <div className="hero min-h-screen">
+      <div className="hero-content text-center">
+        <div className="max-w-md">
+          <div className="avatar">
+            <div className="w-48 mb-6 mx-auto">
+              <Mascot mood="happy" width={200} height={200} priority />
+            </div>
+          </div>
 
-      <h1 className="text-4xl font-bold mb-6">Welcome to DeWorm</h1>
-      <p className="text-center max-w-md mb-8">
-        An app to help cure earworms - those songs that get stuck in your head.
-        Login with Spotify to get started.
-      </p>
+          <h1 className="text-4xl font-bold mb-6">Welcome to DeWorm</h1>
+          <p className="mb-8">
+            An app to help cure earworms - those songs that get stuck in your
+            head. Login with Spotify to get started.
+          </p>
 
-      <div className="flex flex-col items-center">
-        {authenticated ? (
-          <Link href="/dashboard" className="btn btn-primary">
-            Go to Dashboard
-          </Link>
-        ) : (
-          <Link href="/api/auth/login" className="btn btn-primary">
-            Login with Spotify
-          </Link>
-        )}
+          {authenticated ? (
+            <Link href="/dashboard" className="btn btn-primary">
+              Go to Dashboard
+            </Link>
+          ) : (
+            <Link href="/api/auth/login" className="btn btn-primary">
+              Login with Spotify
+            </Link>
+          )}
+        </div>
       </div>
-    </main>
+    </div>
   );
 }
