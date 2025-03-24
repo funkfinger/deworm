@@ -22,7 +22,7 @@
 - [x] Configure Tailwind with DaisyUI and design tokens
 - [x] Enable strict TypeScript configuration
 - [x] Set up Biome for linting and formatting
-- [x] Configure Git pre-commit hooks for linting
+- [-] Configure Git pre-commit hooks for linting (temporarily disabled, to be revisited)
 
 ## Authentication and API Setup
 
@@ -43,12 +43,13 @@
 ## UI Components and Pages
 
 - [ ] Create the QT mascot component with different emotional states:
-  - [ ] Happy (default)
+  - [x] Happy (default) - added to home page
+  - [x] Sad - available in public/images
   - [ ] Thinking
   - [ ] Excited
   - [ ] Confused
 - [ ] Implement core pages:
-  - [x] Homepage/welcome screen (basic placeholder)
+  - [x] Homepage/welcome screen (with mascot and styled button)
   - [ ] Spotify login page/component
   - [ ] Search page for finding earworm songs
   - [ ] Player page for playing replacement songs
