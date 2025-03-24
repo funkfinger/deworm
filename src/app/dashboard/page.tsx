@@ -30,7 +30,7 @@ export default async function Dashboard() {
           <div className="mb-6">
             <p className="mb-4">
               Hello,{" "}
-              <span className="font-semibold">{userProfile.display_name}</span>!
+              <span className="font-bold">{userProfile.display_name}</span>!
             </p>
 
             {userProfile.images &&
@@ -55,7 +55,7 @@ export default async function Dashboard() {
               Search for the song that&apos;s stuck in your head, and we&apos;ll
               help you replace it.
             </p>
-            <div className="card-actions justify-end mt-2">
+            <div className="card-actions justify-end">
               <Link href="/search" className="btn btn-primary btn-sm">
                 Search Songs
               </Link>

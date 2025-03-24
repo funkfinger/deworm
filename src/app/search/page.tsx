@@ -135,7 +135,7 @@ export default function SearchPage() {
                     )}
                 </figure>
                 <div className="card-body p-4">
-                  <h2 className="card-title text-lg">{track.name}</h2>
+                  <h2 className="card-title">{track.name}</h2>
                   <p>{track.artists.map((a) => a.name).join(", ")}</p>
                   <div className="card-actions justify-between items-center">
                     <span className="opacity-70">
@@ -152,12 +152,12 @@ export default function SearchPage() {
         ) : (
           <div className="text-center py-8">
             {!isLoading && query && (
-              <p className="text-gray-500">
+              <p className="text-base-content text-opacity-60">
                 No results found. Try a different search term.
               </p>
             )}
             {!query && !isLoading && (
-              <p className="text-gray-500">
+              <p className="text-base-content text-opacity-60">
                 Enter a song title or artist to find your earworm.
               </p>
             )}
