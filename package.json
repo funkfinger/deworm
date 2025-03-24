@@ -16,12 +16,6 @@
     "prepare": "husky && mkdir -p tests/test-results",
     "postinstall": "husky"
   },
-  "lint-staged": {
-    "*.{ts,tsx}": [
-      "biome check --write",
-      "biome format --write"
-    ]
-  },
   "dependencies": {
     "@fortawesome/fontawesome-svg-core": "^6.7.2",
     "@fortawesome/free-brands-svg-icons": "^6.7.2",
