@@ -1,16 +1,10 @@
-import Image from "next/image";
+import Mascot from "./components/Mascot";
 
 export default function Home() {
   return (
     <main className="flex min-h-screen flex-col items-center justify-center p-4">
       <div className="mb-6 w-48">
-        <Image
-          src="/images/mascot.svg"
-          alt="DeWorm Mascot"
-          width={200}
-          height={200}
-          priority
-        />
+        <Mascot mood="happy" width={200} height={200} priority />
       </div>
 
       <h1 className="text-4xl font-bold mb-6">Welcome to DeWorm</h1>
