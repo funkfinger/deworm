@@ -1,1 +1,4 @@
-npx lint-staged
+#!/usr/bin/env sh
+
+# Run our custom pre-commit script
+node scripts/pre-commit.js
