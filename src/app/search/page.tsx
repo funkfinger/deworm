@@ -5,7 +5,6 @@ import Link from "next/link";
 import Mascot from "@/app/components/Mascot";
 import SearchAutocomplete from "@/app/components/SearchAutocomplete";
 import SpotifyPlayer from "@/app/components/SpotifyPlayer";
-import { searchSpotifyTracks } from "@/app/lib/client-actions";
 import { getAccessToken } from "@/app/lib/client-session";
 
 // Types for Spotify API responses
@@ -32,16 +31,9 @@ type SpotifyTrack = {
   duration_ms: number;
 };
 
-interface SearchResults {
-  tracks: {
-    items: SpotifyTrack[];
-  };
-}
-
 export default function SearchPage() {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SpotifyTrack[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [selectedTrack, setSelectedTrack] = useState<SpotifyTrack | null>(null);
@@ -72,24 +64,6 @@ export default function SearchPage() {
     return `${minutes}:${seconds.padStart(2, "0")}`;
   };
 
-  const handleSearch = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!query.trim()) return;
-
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const data = (await searchSpotifyTracks(query)) as SearchResults;
-      setResults(data.tracks.items);
-    } catch (err) {
-      console.error("Error searching tracks:", err);
-      setError("Failed to search tracks. Please try again.");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   const handleSelectTrack = (track: SpotifyTrack) => {
     setSelectedTrack(track);
     setShowPlayer(true);
@@ -113,7 +87,11 @@ export default function SearchPage() {
     });
 
     // Add album image if available
-    if (track.album.images && track.album.images.length > 0) {
+    if (
+      track.album.images &&
+      track.album.images.length > 0 &&
+      track.album.images[0]
+    ) {
       params.append("image", track.album.images[0].url);
     }
 
@@ -136,35 +114,11 @@ export default function SearchPage() {
               <h2 className="card-title">Search for a track</h2>
               <SearchAutocomplete onTrackSelected={handleTrackSelected} />
 
-              <div className="divider">OR</div>
-
-              <form onSubmit={handleSearch} className="form-control">
-                <div className="input-group">
-                  <input
-                    type="text"
-                    placeholder="Search for a song..."
-                    className="input input-bordered flex-1"
-                    value={query}
-                    onChange={(e) => setQuery(e.target.value)}
-                  />
-                  <button
-                    type="submit"
-                    className="btn btn-primary"
-                    disabled={isLoading}
-                  >
-                    {isLoading ? (
-                      <span className="loading loading-spinner"></span>
-                    ) : (
-                      "Search"
-                    )}
-                  </button>
+              {error && (
+                <div className="alert alert-error mt-4">
+                  <span>{error}</span>
                 </div>
-                {error && (
-                  <div className="alert alert-error mt-4">
-                    <span>{error}</span>
-                  </div>
-                )}
-              </form>
+              )}
             </div>
           </div>
 

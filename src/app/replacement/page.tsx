@@ -8,6 +8,7 @@ import SpotifyPlayer from "@/app/components/SpotifyPlayer";
 import {
   getReplacementPlaylistTracks,
   getReplacementPlaylistInfo,
+  REPLACEMENT_PLAYLIST_ID,
 } from "@/app/lib/client-actions";
 import { getAccessToken } from "@/app/lib/client-session";
 
@@ -113,6 +114,9 @@ export default function ReplacementPage() {
         setPlaylistInfo(infoResponse);
         setPlaylistTracks(tracksResponse.items);
 
+        // Check if earworm is already in the playlist
+        await checkAndAddEarwormToPlaylist();
+
         // Automatically select a random track as recommendation
         if (tracksResponse.items.length > 0) {
           const randomIndex = Math.floor(
@@ -131,6 +135,75 @@ export default function ReplacementPage() {
 
     loadPlaylistData();
   }, [accessToken, earwormId, earwormName]);
+
+  // Check if earworm is in playlist and add it if not
+  const checkAndAddEarwormToPlaylist = async () => {
+    if (!earwormId || !earwormUri || !accessToken) return;
+
+    try {
+      // Check if track is already in the playlist by checking all tracks
+      let allPlaylistTracks: PlaylistTrackItem[] = [];
+      let offset = 0;
+      let hasMore = true;
+
+      while (hasMore) {
+        const response = await getReplacementPlaylistTracks(100, offset);
+        if (response && response.items) {
+          allPlaylistTracks = [...allPlaylistTracks, ...response.items];
+
+          if (response.next) {
+            offset += 100;
+          } else {
+            hasMore = false;
+          }
+        } else {
+          hasMore = false;
+        }
+      }
+
+      // Check if the track exists in the playlist
+      const trackExists = allPlaylistTracks.some(
+        (item) => item.track && item.track.id === earwormId
+      );
+
+      if (!trackExists) {
+        // Add the track to the playlist
+        await addTrackToPlaylist(earwormUri);
+      }
+    } catch (err) {
+      console.error("Error checking/adding track to playlist:", err);
+    }
+  };
+
+  // Add a track to the Spotify playlist
+  const addTrackToPlaylist = async (trackUri: string) => {
+    if (!accessToken) return;
+
+    try {
+      const response = await fetch(
+        `https://api.spotify.com/v1/playlists/${REPLACEMENT_PLAYLIST_ID}/tracks`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            uris: [trackUri],
+            position: 0,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`Failed to add track to playlist: ${response.status}`);
+      }
+
+      console.log("Track added to playlist successfully");
+    } catch (err) {
+      console.error("Error adding track to playlist:", err);
+    }
+  };
 
   // Format milliseconds to minutes:seconds
   const formatDuration = (ms: number): string => {
