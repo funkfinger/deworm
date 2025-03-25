@@ -9,6 +9,7 @@ import {
   getAccessToken,
   isAuthenticated,
   getUserProfile,
+  debugCookies,
 } from "@/app/lib/client-session";
 import type { SpotifyUser } from "@/app/lib/spotify";
 
@@ -53,11 +54,17 @@ export default function SearchPage() {
     const loadAccessToken = () => {
       setIsLoading(true);
       try {
+        console.log("🔄 Search page: Loading authentication state...");
+        debugCookies();
+
         // Check authentication first
         const isLoggedIn = isAuthenticated();
-        console.log("Is logged in:", isLoggedIn);
+        console.log("🔍 Search page: Is logged in:", isLoggedIn);
 
         if (!isLoggedIn) {
+          console.log(
+            "❌ Search page: Not authenticated, showing login prompt"
+          );
           setIsAuthChecked(true);
           setIsLoading(false);
           return;
@@ -66,17 +73,27 @@ export default function SearchPage() {
         // Get token if authenticated
         const token = getAccessToken();
         if (token) {
+          console.log("✅ Search page: Token found and set");
           setAccessToken(token);
-          console.log("Token loaded successfully");
 
           // Also get user profile
           const profile = getUserProfile();
           if (profile) {
+            console.log(
+              "✅ Search page: User profile loaded:",
+              profile.display_name
+            );
             setUserProfile(profile);
+          } else {
+            console.log("❌ Search page: No user profile found");
           }
+        } else {
+          console.log(
+            "❌ Search page: Token not found even though authenticated"
+          );
         }
       } catch (err) {
-        console.error("Error loading access token:", err);
+        console.error("❌ Search page: Error loading access token:", err);
         setError("Failed to load access token. Please login again.");
       } finally {
         setIsAuthChecked(true);

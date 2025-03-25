@@ -9,6 +9,7 @@ const PUBLIC_ROUTES = [
   "/api/auth/login",
   "/api/auth/callback",
   "/auth/error",
+  "/debug",
 ];
 
 /**
@@ -24,8 +25,15 @@ export function middleware(request: NextRequest) {
   // Get the pathname from the URL
   const pathname = request.nextUrl.pathname;
 
+  console.log("🔍 Middleware: Processing path:", pathname);
+  console.log(
+    "🔍 Middleware: Has auth cookie:",
+    request.cookies.has("spotify_access_token")
+  );
+
   // Redirect dashboard to search (since we've merged them)
   if (pathname === "/dashboard") {
+    console.log("🔄 Middleware: Redirecting from /dashboard to /search");
     return NextResponse.redirect(new URL("/search", request.url));
   }
 
@@ -36,6 +44,7 @@ export function middleware(request: NextRequest) {
     pathname.startsWith("/_next/") ||
     pathname.match(/\.(ico|png|jpg|jpeg|svg|css|js)$/)
   ) {
+    console.log("✅ Middleware: Allowing access to public route:", pathname);
     return NextResponse.next();
   }
 
@@ -50,12 +59,18 @@ export function middleware(request: NextRequest) {
     const hasAuthCookie = request.cookies.has("spotify_access_token");
 
     if (!hasAuthCookie) {
+      console.log(
+        "❌ Middleware: No auth cookie for protected route, redirecting to home"
+      );
       // Redirect to login page if no auth cookie exists
       return NextResponse.redirect(new URL("/", request.url));
     }
+
+    console.log("✅ Middleware: Authenticated for protected route:", pathname);
   }
 
   // Continue with the request
+  console.log("✅ Middleware: Allowing request to proceed");
   return NextResponse.next();
 }
 

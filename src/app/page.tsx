@@ -37,6 +37,12 @@ export default async function Home() {
               </>
             )}
           </div>
+
+          <div className="mt-8 text-sm opacity-50">
+            <Link href="/debug" className="underline">
+              Debug Authentication
+            </Link>
+          </div>
         </div>
       </div>
     </div>
