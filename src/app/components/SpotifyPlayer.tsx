@@ -29,12 +29,16 @@ interface SpotifyTrack {
   duration_ms: number;
 }
 
-// Spotify event interfaces
-interface SpotifyError {
+// Spotify event interfaces with looser typing to match SDK expectations
+interface SpotifyEventBase extends Record<string, unknown> {
+  // Base interface that extends Record<string, unknown> for compatibility
+}
+
+interface SpotifyError extends SpotifyEventBase {
   message: string;
 }
 
-interface SpotifyPlayerState {
+interface SpotifyPlayerState extends SpotifyEventBase {
   paused: boolean;
   position: number;
   track_window: {
@@ -44,7 +48,7 @@ interface SpotifyPlayerState {
   };
 }
 
-interface SpotifyReadyEvent {
+interface SpotifyReadyEvent extends SpotifyEventBase {
   device_id: string;
 }
 
@@ -71,9 +75,9 @@ export default function SpotifyPlayer({
   const [isMuted, setIsMuted] = useState(false);
   const [currentTrack, setCurrentTrack] = useState<SpotifyTrack | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [retryCount, setRetryCount] = useState(0);
   const [sdkLoaded, setSdkLoaded] = useState(false);
   const playerInitialized = useRef(false);
+  const initializationAttempts = useRef(0);
 
   // Load Spotify Web Playback SDK script
   useEffect(() => {
@@ -114,155 +118,192 @@ export default function SpotifyPlayer({
 
     console.log("🔄 Setting up Spotify Web Playback SDK...");
     playerInitialized.current = true;
+    initializationAttempts.current += 1;
 
-    const initializePlayer = () => {
-      try {
-        console.log("🔄 Initializing Spotify player with token...");
-        const player = new window.Spotify.Player({
-          name: "Deworm Web Player",
-          getOAuthToken: (callback) => {
-            console.log("🔄 Providing OAuth token to player");
-            callback(accessToken);
-          },
-          volume: volume,
-        });
+    // If we've tried more than 3 times, show an error
+    if (initializationAttempts.current > 3) {
+      console.error("❌ Too many initialization attempts. Giving up.");
+      setError(
+        "Unable to connect to Spotify after multiple attempts. Please refresh the page."
+      );
+      return;
+    }
 
-        // Error handling
-        player.addListener("initialization_error", (event: SpotifyError) => {
-          console.error("❌ Initialization error:", event.message);
-          setError(`Player initialization failed: ${event.message}`);
-          if (onPlayerError) onPlayerError(new Error(event.message));
-        });
+    // Add a short delay before initializing player to ensure SDK is fully ready
+    const initTimer = setTimeout(() => {
+      const initializePlayer = () => {
+        try {
+          console.log("🔄 Initializing Spotify player with token...");
+          const player = new window.Spotify.Player({
+            name: "Deworm Web Player",
+            getOAuthToken: (callback) => {
+              console.log("🔄 Providing OAuth token to player");
+              callback(accessToken);
+            },
+            volume: volume,
+          });
 
-        player.addListener("authentication_error", (event: SpotifyError) => {
-          console.error("❌ Authentication error:", event.message);
-          setError(`Authentication failed: ${event.message}`);
-          if (onPlayerError) onPlayerError(new Error(event.message));
-        });
+          // Error handling - use type assertion to match SDK expectations
+          player.addListener("initialization_error", ((event) => {
+            const errorEvent = event as SpotifyError;
+            console.error("❌ Initialization error:", errorEvent.message);
+            setError(`Player initialization failed: ${errorEvent.message}`);
+            if (onPlayerError) onPlayerError(new Error(errorEvent.message));
+          }) as (event: Record<string, unknown>) => void);
 
-        player.addListener("account_error", (event: SpotifyError) => {
-          console.error("❌ Account error:", event.message);
-          setError(`Account error: ${event.message}`);
-          if (onPlayerError) onPlayerError(new Error(event.message));
-        });
+          player.addListener("authentication_error", ((event) => {
+            const errorEvent = event as SpotifyError;
+            console.error("❌ Authentication error:", errorEvent.message);
+            setError(`Authentication failed: ${errorEvent.message}`);
+            if (onPlayerError) onPlayerError(new Error(errorEvent.message));
+          }) as (event: Record<string, unknown>) => void);
 
-        player.addListener("playback_error", (event: SpotifyError) => {
-          console.error("❌ Playback error:", event.message);
-          setError(`Playback error: ${event.message}`);
-          if (onPlayerError) onPlayerError(new Error(event.message));
-        });
+          player.addListener("account_error", ((event) => {
+            const errorEvent = event as SpotifyError;
+            console.error("❌ Account error:", errorEvent.message);
+            setError(`Account error: ${errorEvent.message}`);
+            if (onPlayerError) onPlayerError(new Error(errorEvent.message));
+          }) as (event: Record<string, unknown>) => void);
 
-        // Playback status updates
-        player.addListener(
-          "player_state_changed",
-          (state: SpotifyPlayerState | null) => {
+          player.addListener("playback_error", ((event) => {
+            const errorEvent = event as SpotifyError;
+            console.error("❌ Playback error:", errorEvent.message);
+            setError(`Playback error: ${errorEvent.message}`);
+            if (onPlayerError) onPlayerError(new Error(errorEvent.message));
+          }) as (event: Record<string, unknown>) => void);
+
+          // Playback status updates
+          player.addListener("player_state_changed", ((state) => {
             if (!state) {
               console.log("🔍 Player state changed but state is null");
               return;
             }
 
+            // Cast the state to our expected type
+            const playerState = state as SpotifyPlayerState;
+
             console.log("🔍 Player state changed:", {
-              paused: state.paused,
-              position: state.position,
-              track: state.track_window.current_track?.name,
+              paused: playerState.paused,
+              position: playerState.position,
+              track: playerState.track_window?.current_track?.name || "unknown",
             });
 
             // Update track information
-            if (state.track_window.current_track) {
-              setCurrentTrack(state.track_window.current_track);
+            if (playerState.track_window?.current_track) {
+              setCurrentTrack(playerState.track_window.current_track);
             }
 
             // Update playing state
-            setIsPlaying(!state.paused);
+            setIsPlaying(!playerState.paused);
 
             // Handle track end
-            if (state.paused && state.position === 0 && onTrackEnd) {
+            if (
+              playerState.paused &&
+              playerState.position === 0 &&
+              onTrackEnd
+            ) {
               onTrackEnd();
             }
+          }) as (event: Record<string, unknown>) => void);
+
+          // Ready
+          player.addListener("ready", ((event) => {
+            const readyEvent = event as SpotifyReadyEvent;
+            console.log("✅ Player ready with Device ID", readyEvent.device_id);
+            setDeviceId(readyEvent.device_id);
+            setIsReady(true);
+            if (onPlayerReady) onPlayerReady();
+          }) as (event: Record<string, unknown>) => void);
+
+          // Not Ready
+          player.addListener("not_ready", ((event) => {
+            const readyEvent = event as SpotifyReadyEvent;
+            console.log("❌ Device ID has gone offline", readyEvent.device_id);
+            setIsReady(false);
+          }) as (event: Record<string, unknown>) => void);
+
+          // Connect to the player
+          console.log("🔄 Connecting to Spotify player...");
+          player
+            .connect()
+            .then((success) => {
+              if (success) {
+                console.log("✅ Player connected successfully");
+                setPlayer(player);
+              } else {
+                console.error("❌ Player failed to connect");
+                setError("Failed to connect to Spotify. Please try again.");
+              }
+            })
+            .catch((err) => {
+              console.error("❌ Error connecting to player:", err);
+              setError(
+                "Error connecting to Spotify player. Please refresh and try again."
+              );
+            });
+
+          return player;
+        } catch (error) {
+          console.error("❌ Error initializing player:", error);
+          setError(
+            "Failed to initialize Spotify player. Please refresh the page."
+          );
+          return null;
+        }
+      };
+
+      try {
+        // Initialize player when SDK is ready
+        if (window.Spotify) {
+          const newPlayer = initializePlayer();
+
+          // Check if player was created successfully
+          if (!newPlayer) {
+            console.error("❌ Player initialization failed");
+            playerInitialized.current = false; // Allow retry
           }
-        );
-
-        // Ready
-        player.addListener("ready", (event: SpotifyReadyEvent) => {
-          console.log("✅ Player ready with Device ID", event.device_id);
-          setDeviceId(event.device_id);
-          setIsReady(true);
-          if (onPlayerReady) onPlayerReady();
-        });
-
-        // Not Ready
-        player.addListener("not_ready", (event: SpotifyReadyEvent) => {
-          console.log("❌ Device ID has gone offline", event.device_id);
-          setIsReady(false);
-        });
-
-        // Connect to the player
-        console.log("🔄 Connecting to Spotify player...");
-        player
-          .connect()
-          .then((success) => {
-            if (success) {
-              console.log("✅ Player connected successfully");
-              setPlayer(player);
-            } else {
-              console.error("❌ Player failed to connect");
-              setError("Failed to connect to Spotify. Please try again.");
+        } else {
+          // Set up event listener for when SDK becomes ready
+          const spotifyCallback = () => {
+            console.log("🔄 Spotify Web Playback SDK is ready");
+            const newPlayer = initializePlayer();
+            if (newPlayer) {
+              setPlayer(newPlayer);
             }
-          })
-          .catch((err) => {
-            console.error("❌ Error connecting to player:", err);
-            setError(
-              "Error connecting to Spotify player. Please refresh and try again."
-            );
-          });
+          };
 
-        return player;
-      } catch (error) {
-        console.error("❌ Error initializing player:", error);
-        setError(
-          "Failed to initialize Spotify player. Please refresh the page."
-        );
-        return null;
+          window.onSpotifyWebPlaybackSDKReady = spotifyCallback;
+        }
+      } catch (err) {
+        console.error("❌ Unexpected error during player setup:", err);
+        setError("An unexpected error occurred. Please refresh the page.");
+        playerInitialized.current = false; // Allow retry
       }
-    };
+    }, 500); // Short delay before initializing
 
-    // Initialize player when SDK is ready
-    if (window.Spotify) {
-      const newPlayer = initializePlayer();
+    // Return cleanup function
+    return () => {
+      clearTimeout(initTimer);
 
-      // Return cleanup function
-      return () => {
-        if (newPlayer) {
-          console.log("🧹 Disconnecting player on cleanup");
-          newPlayer.disconnect();
-          playerInitialized.current = false;
-        }
-      };
-    } else {
-      // Set up event listener for when SDK becomes ready
-      const spotifyCallback = () => {
-        console.log("🔄 Spotify Web Playback SDK is ready");
-        const newPlayer = initializePlayer();
-        if (newPlayer) {
-          setPlayer(newPlayer);
-        }
-      };
-
-      window.onSpotifyWebPlaybackSDKReady = spotifyCallback;
-
-      // Return cleanup function
-      return () => {
-        if (window.Spotify && player) {
-          console.log("🧹 Disconnecting player and cleanup");
+      if (player) {
+        console.log("🧹 Disconnecting player on cleanup");
+        try {
           player.disconnect();
-          playerInitialized.current = false;
+        } catch (err) {
+          console.error("❌ Error during player disconnect:", err);
         }
-        // Remove callback safely
-        if (window.onSpotifyWebPlaybackSDKReady === spotifyCallback) {
-          window.onSpotifyWebPlaybackSDKReady = null;
-        }
-      };
-    }
+      }
+
+      // Clean up Spotify callback if we set it
+      if (
+        typeof window !== "undefined" &&
+        window.onSpotifyWebPlaybackSDKReady
+      ) {
+        window.onSpotifyWebPlaybackSDKReady = null;
+      }
+
+      playerInitialized.current = false;
+    };
   }, [
     accessToken,
     onPlayerReady,
@@ -392,11 +433,14 @@ export default function SpotifyPlayer({
   const retryInitialization = () => {
     console.log("🔄 Retrying player initialization");
     setError(null);
-    setRetryCount((prev) => prev + 1);
     playerInitialized.current = false;
 
     if (player) {
-      player.disconnect();
+      try {
+        player.disconnect();
+      } catch (err) {
+        console.error("❌ Error during disconnect on retry:", err);
+      }
     }
 
     setPlayer(null);
@@ -435,7 +479,7 @@ export default function SpotifyPlayer({
             <div className="flex-1">
               <h3 className="font-bold">{currentTrack.name}</h3>
               <p className="text-sm opacity-75">
-                {currentTrack.artists?.map((a: any) => a.name).join(", ")}
+                {currentTrack.artists?.map((a) => a.name).join(", ")}
               </p>
             </div>
           </div>
@@ -508,9 +552,10 @@ declare global {
   }
 }
 
-// Spotify Player Interface
+// Type declarations for Spotify Web Playback SDK
+// Using module declaration instead of namespace for better TS compatibility
 declare namespace Spotify {
-  export interface Player {
+  interface Player {
     connect(): Promise<boolean>;
     disconnect(): void;
     togglePlay(): Promise<void>;
