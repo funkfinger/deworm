@@ -201,8 +201,8 @@ export default function SpotifyPlayer({
             "initialization_error",
             (event: Record<string, unknown>) => {
               const message =
-                typeof event.message === "string"
-                  ? event.message
+                typeof event["message"] === "string"
+                  ? event["message"]
                   : "Unknown initialization error";
               console.error("❌ Initialization error:", message);
               setError(`Player initialization failed: ${message}`);
@@ -214,11 +214,15 @@ export default function SpotifyPlayer({
             "authentication_error",
             (event: Record<string, unknown>) => {
               const message =
-                typeof event.message === "string"
-                  ? event.message
+                typeof event["message"] === "string"
+                  ? event["message"]
                   : "Unknown authentication error";
               console.error("❌ Authentication error:", message);
               setError(`Authentication failed: ${message}`);
+
+              // Redirect to login on authentication errors
+              window.location.href = "/api/auth/login";
+
               if (onPlayerError) onPlayerError(new Error(message));
             }
           );
@@ -260,22 +264,22 @@ export default function SpotifyPlayer({
 
               // Safely access properties with type checks
               const isPaused =
-                typeof state.paused === "boolean" ? state.paused : true;
+                typeof state["paused"] === "boolean" ? state["paused"] : true;
               const position =
-                typeof state.position === "number" ? state.position : 0;
+                typeof state["position"] === "number" ? state["position"] : 0;
 
               // Safely handle track_window and current_track
-              const trackWindow = state.track_window as
+              const trackWindow = state["track_window"] as
                 | Record<string, unknown>
                 | undefined;
-              const currentTrackData = trackWindow?.current_track as
+              const currentTrackData = trackWindow?.["current_track"] as
                 | Record<string, unknown>
                 | undefined;
 
               if (currentTrackData) {
                 const currentTrackName =
-                  typeof currentTrackData.name === "string"
-                    ? currentTrackData.name
+                  typeof currentTrackData["name"] === "string"
+                    ? currentTrackData["name"]
                     : "unknown";
 
                 console.log("🔍 Player state changed:", {
@@ -286,32 +290,43 @@ export default function SpotifyPlayer({
 
                 // Only use the track data if we have all required fields
                 if (
-                  typeof currentTrackData.id === "string" &&
-                  typeof currentTrackData.name === "string" &&
-                  typeof currentTrackData.uri === "string"
+                  typeof currentTrackData["id"] === "string" &&
+                  typeof currentTrackData["name"] === "string" &&
+                  typeof currentTrackData["uri"] === "string"
                 ) {
                   try {
+                    const album = currentTrackData["album"] as
+                      | Record<string, unknown>
+                      | undefined;
+                    const albumName =
+                      typeof album?.["name"] === "string"
+                        ? (album["name"] as string)
+                        : "Unknown Album";
+
+                    let albumImages: SpotifyTrack["album"]["images"] = [];
+                    if (album && Array.isArray(album["images"])) {
+                      albumImages = album[
+                        "images"
+                      ] as SpotifyTrack["album"]["images"];
+                    }
+
                     // Cast to SpotifyTrack with validation
                     const validTrack: SpotifyTrack = {
-                      id: currentTrackData.id as string,
-                      name: currentTrackData.name as string,
-                      uri: currentTrackData.uri as string,
+                      id: currentTrackData["id"] as string,
+                      name: currentTrackData["name"] as string,
+                      uri: currentTrackData["uri"] as string,
                       album: {
-                        name:
-                          typeof currentTrackData.album?.name === "string"
-                            ? (currentTrackData.album.name as string)
-                            : "Unknown Album",
-                        images: Array.isArray(currentTrackData.album?.images)
-                          ? (currentTrackData.album
-                              .images as SpotifyTrack["album"]["images"])
-                          : [],
+                        name: albumName,
+                        images: albumImages,
                       },
-                      artists: Array.isArray(currentTrackData.artists)
-                        ? (currentTrackData.artists as SpotifyTrack["artists"])
+                      artists: Array.isArray(currentTrackData["artists"])
+                        ? (currentTrackData[
+                            "artists"
+                          ] as SpotifyTrack["artists"])
                         : [],
                       duration_ms:
-                        typeof currentTrackData.duration_ms === "number"
-                          ? (currentTrackData.duration_ms as number)
+                        typeof currentTrackData["duration_ms"] === "number"
+                          ? (currentTrackData["duration_ms"] as number)
                           : 0,
                     };
 
@@ -335,7 +350,7 @@ export default function SpotifyPlayer({
           // Ready
           newPlayer.addListener("ready", (event: Record<string, unknown>) => {
             const deviceId =
-              typeof event.device_id === "string" ? event.device_id : "";
+              typeof event["device_id"] === "string" ? event["device_id"] : "";
             if (!deviceId) {
               console.error("❌ Ready event missing device ID");
               return;
@@ -352,8 +367,8 @@ export default function SpotifyPlayer({
             "not_ready",
             (event: Record<string, unknown>) => {
               const deviceId =
-                typeof event.device_id === "string"
-                  ? event.device_id
+                typeof event["device_id"] === "string"
+                  ? event["device_id"]
                   : "unknown";
               console.log("❌ Device ID has gone offline", deviceId);
               setIsReady(false);
@@ -437,7 +452,7 @@ export default function SpotifyPlayer({
         typeof window !== "undefined" &&
         window.onSpotifyWebPlaybackSDKReady
       ) {
-        window.onSpotifyWebPlaybackSDKReady = undefined;
+        window.onSpotifyWebPlaybackSDKReady = null as unknown as () => void;
       }
 
       playerInitialized.current = false;
@@ -477,6 +492,8 @@ export default function SpotifyPlayer({
           if (!accessToken) {
             console.error("❌ No access token available for playback");
             setError("Authentication error. Please log in again.");
+            // Redirect to login on missing token
+            window.location.href = "/api/auth/login";
             return;
           }
 
@@ -516,6 +533,18 @@ export default function SpotifyPlayer({
               setIsPlaying(true);
               setError(null);
             } else {
+              // Handle specific auth errors
+              if (playResponse.status === 401) {
+                console.error("❌ Authentication token expired or invalid");
+                setError(
+                  "Your Spotify session has expired. Please log in again."
+                );
+
+                // Force re-login for authentication issues
+                window.location.href = "/api/auth/login";
+                return;
+              }
+
               // Try to read the error body, but don't fail if we can't
               let errorMessage = playResponse.statusText || "Unknown error";
 
@@ -524,6 +553,29 @@ export default function SpotifyPlayer({
                   const errorData = await playResponse.json();
                   if (errorData && errorData.error && errorData.error.message) {
                     errorMessage = errorData.error.message;
+
+                    // Check for specific Spotify error messages related to authentication
+                    if (
+                      errorData.error.message.includes("token") ||
+                      errorData.error.message.includes("auth") ||
+                      errorData.error.message.includes("premium")
+                    ) {
+                      console.error(
+                        "❌ Spotify subscription or auth issue:",
+                        errorMessage
+                      );
+
+                      // Redirect for premium requirement or auth issues
+                      if (errorData.error.message.includes("premium")) {
+                        setError(
+                          "Spotify Premium account required for playback."
+                        );
+                      } else {
+                        setError("Authentication issue. Please log in again.");
+                        window.location.href = "/api/auth/login";
+                        return;
+                      }
+                    }
                   }
                 } catch (parseError) {
                   console.error(
