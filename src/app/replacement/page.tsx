@@ -94,32 +94,54 @@ export default function ReplacementPage() {
 
   // Load playlist data
   useEffect(() => {
-    if (!accessToken) return;
+    if (!accessToken) {
+      console.log("🔍 Replacement Page: No access token available");
+      return;
+    }
     if (!earwormId || !earwormName) {
+      console.log("🔍 Replacement Page: Missing earworm data", {
+        earwormId,
+        earwormName,
+      });
       setError("No earworm specified. Please select an earworm first.");
       return;
     }
 
     const loadPlaylistData = async () => {
+      console.log("🔄 Replacement Page: Loading playlist data");
       setIsLoading(true);
       setError(null);
 
       try {
         // Load playlist info and tracks
+        console.log("🔄 Replacement Page: Fetching playlist info and tracks");
         const [infoResponse, tracksResponse] = await Promise.all([
           getReplacementPlaylistInfo(),
           getReplacementPlaylistTracks(50, 0),
         ]);
 
+        console.log(
+          "✅ Replacement Page: Received playlist info:",
+          infoResponse?.name
+        );
+        console.log(
+          "✅ Replacement Page: Received tracks count:",
+          tracksResponse?.items?.length || 0
+        );
+
         // Ensure we have valid data before setting state
         if (infoResponse) {
           setPlaylistInfo(infoResponse);
         } else {
-          console.error("Invalid playlist info response:", infoResponse);
+          console.error(
+            "❌ Replacement Page: Invalid playlist info response:",
+            infoResponse
+          );
         }
 
         // Make sure tracksResponse exists and has items array before setting state
         if (tracksResponse && Array.isArray(tracksResponse.items)) {
+          console.log("✅ Replacement Page: Setting playlist tracks");
           setPlaylistTracks(tracksResponse.items);
 
           // Automatically select a random track as recommendation
@@ -130,19 +152,36 @@ export default function ReplacementPage() {
 
             const randomTrack = tracksResponse.items[randomIndex]?.track;
             if (randomTrack) {
+              console.log("✅ Replacement Page: Selected random track:", {
+                id: randomTrack.id,
+                name: randomTrack.name,
+                uri: randomTrack.uri,
+              });
               setSelectedTrack(randomTrack);
               setShowPlayer(true);
+            } else {
+              console.error(
+                "❌ Replacement Page: Random track selection failed",
+                {
+                  index: randomIndex,
+                  itemsLength: tracksResponse.items.length,
+                  item: tracksResponse.items[randomIndex],
+                }
+              );
             }
           }
         } else {
-          console.error("Invalid tracks response:", tracksResponse);
+          console.error(
+            "❌ Replacement Page: Invalid tracks response:",
+            tracksResponse
+          );
           setPlaylistTracks([]);
         }
 
         // Check if earworm is already in the playlist
         await checkAndAddEarwormToPlaylist();
       } catch (err) {
-        console.error("Error loading playlist data:", err);
+        console.error("❌ Replacement Page: Error loading playlist data:", err);
         setError("Failed to load replacement songs. Please try again.");
       } finally {
         setIsLoading(false);
@@ -236,11 +275,17 @@ export default function ReplacementPage() {
   };
 
   const handleSelectTrack = (track: SpotifyTrack) => {
+    console.log("🔄 Replacement Page: Manually selecting track", {
+      id: track.id,
+      name: track.name,
+      uri: track.uri,
+    });
     setSelectedTrack(track);
     setShowPlayer(true);
   };
 
   const handleReplaceAgain = () => {
+    console.log("🔄 Replacement Page: Finding another replacement track");
     // Only proceed if playlistTracks is defined and not empty
     if (playlistTracks && playlistTracks.length > 0) {
       // Select a different random track
@@ -253,6 +298,11 @@ export default function ReplacementPage() {
         randomIndex = Math.floor(Math.random() * playlistTracks.length);
         trackToSelect = playlistTracks[randomIndex]?.track;
         attemptCount++;
+        console.log(
+          `🔍 Replacement Page: Try #${attemptCount} - Random track:`,
+          randomIndex,
+          trackToSelect?.name
+        );
       } while (
         selectedTrack &&
         trackToSelect &&
@@ -263,17 +313,36 @@ export default function ReplacementPage() {
 
       // Ensure we have a valid track before setting it
       if (trackToSelect) {
+        console.log("✅ Replacement Page: Selected new replacement track:", {
+          id: trackToSelect.id,
+          name: trackToSelect.name,
+          uri: trackToSelect.uri,
+        });
         setSelectedTrack(trackToSelect);
         setShowPlayer(true);
       } else {
-        console.error("Could not find a valid track to select");
+        console.error(
+          "❌ Replacement Page: Could not find a valid track to select"
+        );
         setError("Could not find a valid replacement track. Please try again.");
       }
     } else {
-      console.error("No playlist tracks available");
+      console.error("❌ Replacement Page: No playlist tracks available");
       setError("No replacement tracks available. Please try again later.");
     }
   };
+
+  // Add a useEffect to log when SpotifyPlayer props change:
+  useEffect(() => {
+    if (showPlayer && selectedTrack && accessToken) {
+      console.log("🔄 Replacement Page: SpotifyPlayer props updated:", {
+        id: selectedTrack.id,
+        name: selectedTrack.name,
+        uri: selectedTrack.uri,
+        hasAccessToken: !!accessToken,
+      });
+    }
+  }, [showPlayer, selectedTrack, accessToken]);
 
   return (
     <main className="container mx-auto px-4 py-8">
@@ -496,8 +565,19 @@ export default function ReplacementPage() {
                   <SpotifyPlayer
                     accessToken={accessToken}
                     trackUri={selectedTrack.uri}
-                    onPlayerError={(error) => setError(error.message)}
-                    onTrackEnd={handleReplaceAgain}
+                    onPlayerError={(error) => {
+                      console.error(
+                        "❌ Replacement Page: Player error:",
+                        error.message
+                      );
+                      setError(error.message);
+                    }}
+                    onTrackEnd={() => {
+                      console.log(
+                        "🔄 Replacement Page: Track ended, finding a new replacement"
+                      );
+                      handleReplaceAgain();
+                    }}
                   />
                 </div>
               </div>

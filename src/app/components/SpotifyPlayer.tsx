@@ -17,15 +17,9 @@ interface SpotifyTrack {
   uri: string;
   album: {
     name: string;
-    images?: Array<{
-      url: string;
-      height: number;
-      width: number;
-    }>;
+    images?: { url: string; height: number; width: number }[];
   };
-  artists?: Array<{
-    name: string;
-  }>;
+  artists: { name: string }[];
   duration_ms: number;
 }
 
@@ -53,21 +47,7 @@ interface SpotifyReadyEvent {
   device_id: string;
 }
 
-type SpotifyPlayerProps = {
-  accessToken: string;
-  trackUri?: string;
-  onPlayerReady?: () => void;
-  onPlayerError?: (error: Error) => void;
-  onTrackEnd?: () => void;
-};
-
-// Define Spotify SDK types locally
-interface SpotifyPlayerOptions {
-  name: string;
-  getOAuthToken: (callback: (token: string) => void) => void;
-  volume: number;
-}
-
+// Define a more specific SDK player interface
 interface SpotifySDKPlayer {
   connect(): Promise<boolean>;
   disconnect(): void;
@@ -84,6 +64,21 @@ interface SpotifySDKPlayer {
     event: string,
     callback?: (event: Record<string, unknown>) => void
   ): void;
+}
+
+interface SpotifyPlayerProps {
+  accessToken: string;
+  trackUri: string;
+  onPlayerReady?: () => void;
+  onPlayerError?: (error: Error) => void;
+  onTrackEnd?: () => void;
+}
+
+// Define Spotify SDK types locally
+interface SpotifyPlayerOptions {
+  name: string;
+  getOAuthToken: (callback: (token: string) => void) => void;
+  volume: number;
 }
 
 // Extend Window with Spotify SDK
@@ -114,26 +109,72 @@ export default function SpotifyPlayer({
   const [sdkLoaded, setSdkLoaded] = useState(false);
   const playerInitialized = useRef(false);
   const initializationAttempts = useRef(0);
+  const uniqueComponentId = useRef(
+    `spotify-player-${Math.random().toString(36).substring(2, 9)}`
+  );
+
+  // Add debug log helper that includes component ID
+  const debugLog = (message: string, data?: unknown) => {
+    if (data) {
+      console.log(`🎵 [${uniqueComponentId.current}] ${message}`, data);
+    } else {
+      console.log(`🎵 [${uniqueComponentId.current}] ${message}`);
+    }
+  };
+
+  // Debug token integrity
+  useEffect(() => {
+    if (accessToken) {
+      try {
+        // Check token structure
+        const tokenParts = accessToken.split(".");
+        if (tokenParts.length !== 3) {
+          debugLog(
+            "⚠️ Warning: Access token does not appear to be a valid JWT"
+          );
+        } else {
+          debugLog("✅ Access token has valid JWT structure");
+        }
+
+        // Log token length and first/last 4 chars for debugging
+        debugLog(
+          `Token length: ${accessToken.length}, Format: ${accessToken.substring(
+            0,
+            4
+          )}...${accessToken.substring(accessToken.length - 4)}`
+        );
+      } catch (err) {
+        debugLog("⚠️ Error inspecting token", err);
+      }
+    } else {
+      debugLog("⚠️ No access token provided");
+    }
+  }, [accessToken]);
 
   // Load Spotify Web Playback SDK script
   useEffect(() => {
+    debugLog(
+      `Initializing player. SDK loaded: ${!!window.Spotify}, Has token: ${!!accessToken}`
+    );
+
     if (window.Spotify) {
+      debugLog("SDK already loaded in window");
       setSdkLoaded(true);
       return;
     }
 
-    console.log("🔄 Loading Spotify Web Playback SDK script...");
+    debugLog("🔄 Loading Spotify Web Playback SDK script...");
     const script = document.createElement("script");
     script.src = "https://sdk.scdn.co/spotify-player.js";
     script.async = true;
 
     script.onload = () => {
-      console.log("✅ Spotify SDK script loaded");
+      debugLog("✅ Spotify SDK script loaded successfully");
       setSdkLoaded(true);
     };
 
-    script.onerror = () => {
-      console.error("❌ Failed to load Spotify SDK");
+    script.onerror = (event) => {
+      debugLog("❌ Failed to load Spotify SDK", event);
       setError(
         "Failed to load Spotify player. Please refresh the page and try again."
       );
@@ -142,6 +183,7 @@ export default function SpotifyPlayer({
     document.body.appendChild(script);
 
     return () => {
+      debugLog("🧹 Cleaning up SDK script");
       if (script.parentNode) {
         script.parentNode.removeChild(script);
       }
@@ -150,21 +192,26 @@ export default function SpotifyPlayer({
 
   // Initialize Spotify Player when SDK is loaded
   useEffect(() => {
-    if (!sdkLoaded || !accessToken) return;
-
-    // Avoid multiple initialization attempts
-    if (playerInitialized.current) {
-      console.log("Player already being initialized, skipping");
+    if (!sdkLoaded || !accessToken) {
+      debugLog(
+        `Not ready to initialize player: SDK loaded: ${sdkLoaded}, Has token: ${!!accessToken}`
+      );
       return;
     }
 
-    console.log("🔄 Setting up Spotify Web Playback SDK...");
+    // Avoid multiple initialization attempts
+    if (playerInitialized.current) {
+      debugLog("Player already being initialized, skipping");
+      return;
+    }
+
+    debugLog("🔄 Setting up Spotify Web Playback SDK...");
     playerInitialized.current = true;
     initializationAttempts.current += 1;
 
     // If we've tried more than 3 times, show an error
     if (initializationAttempts.current > 3) {
-      console.error("❌ Too many initialization attempts. Giving up.");
+      debugLog("❌ Too many initialization attempts. Giving up.");
       setError(
         "Unable to connect to Spotify after multiple attempts. Please refresh the page."
       );
@@ -175,11 +222,11 @@ export default function SpotifyPlayer({
     const initTimer = setTimeout(() => {
       const initializePlayer = () => {
         try {
-          console.log("🔄 Initializing Spotify player with token...");
+          debugLog("🔄 Initializing Spotify player with token...");
 
           // Check if Spotify SDK is available
           if (!window.Spotify) {
-            console.error("❌ Spotify SDK not available yet");
+            debugLog("❌ Spotify SDK not available yet");
             setError(
               "Spotify player couldn't be initialized. Please refresh the page."
             );
@@ -190,7 +237,7 @@ export default function SpotifyPlayer({
           const newPlayer = new window.Spotify.Player({
             name: "Deworm Web Player",
             getOAuthToken: (callback) => {
-              console.log("🔄 Providing OAuth token to player");
+              debugLog("🔄 Providing OAuth token to player");
               callback(accessToken);
             },
             volume: volume,
@@ -204,7 +251,7 @@ export default function SpotifyPlayer({
                 typeof event["message"] === "string"
                   ? event["message"]
                   : "Unknown initialization error";
-              console.error("❌ Initialization error:", message);
+              debugLog("❌ Initialization error:", message);
               setError(`Player initialization failed: ${message}`);
               if (onPlayerError) onPlayerError(new Error(message));
             }
@@ -217,10 +264,11 @@ export default function SpotifyPlayer({
                 typeof event["message"] === "string"
                   ? event["message"]
                   : "Unknown authentication error";
-              console.error("❌ Authentication error:", message);
+              debugLog("❌ Authentication error:", message);
               setError(`Authentication failed: ${message}`);
 
               // Redirect to login on authentication errors
+              debugLog("🔄 Redirecting to login due to authentication error");
               window.location.href = "/api/auth/login";
 
               if (onPlayerError) onPlayerError(new Error(message));
@@ -231,10 +279,10 @@ export default function SpotifyPlayer({
             "account_error",
             (event: Record<string, unknown>) => {
               const message =
-                typeof event.message === "string"
-                  ? event.message
+                typeof event["message"] === "string"
+                  ? event["message"]
                   : "Unknown account error";
-              console.error("❌ Account error:", message);
+              debugLog("❌ Account error:", message);
               setError(`Account error: ${message}`);
               if (onPlayerError) onPlayerError(new Error(message));
             }
@@ -244,10 +292,10 @@ export default function SpotifyPlayer({
             "playback_error",
             (event: Record<string, unknown>) => {
               const message =
-                typeof event.message === "string"
-                  ? event.message
+                typeof event["message"] === "string"
+                  ? event["message"]
                   : "Unknown playback error";
-              console.error("❌ Playback error:", message);
+              debugLog("❌ Playback error:", message);
               setError(`Playback error: ${message}`);
               if (onPlayerError) onPlayerError(new Error(message));
             }
@@ -258,7 +306,7 @@ export default function SpotifyPlayer({
             "player_state_changed",
             (state: Record<string, unknown>) => {
               if (!state) {
-                console.log("🔍 Player state changed but state is null");
+                debugLog("🔍 Player state changed but state is null");
                 return;
               }
 
@@ -282,10 +330,12 @@ export default function SpotifyPlayer({
                     ? currentTrackData["name"]
                     : "unknown";
 
-                console.log("🔍 Player state changed:", {
+                debugLog("🔍 Player state changed:", {
                   paused: isPaused,
                   position: position,
                   track: currentTrackName,
+                  trackId: currentTrackData["id"],
+                  trackUri: currentTrackData["uri"],
                 });
 
                 // Only use the track data if we have all required fields
@@ -303,11 +353,17 @@ export default function SpotifyPlayer({
                         ? (album["name"] as string)
                         : "Unknown Album";
 
-                    let albumImages: SpotifyTrack["album"]["images"] = [];
+                    let albumImages: {
+                      url: string;
+                      height: number;
+                      width: number;
+                    }[] = [];
                     if (album && Array.isArray(album["images"])) {
-                      albumImages = album[
-                        "images"
-                      ] as SpotifyTrack["album"]["images"];
+                      albumImages = album["images"] as {
+                        url: string;
+                        height: number;
+                        width: number;
+                      }[];
                     }
 
                     // Cast to SpotifyTrack with validation
@@ -317,7 +373,16 @@ export default function SpotifyPlayer({
                       uri: currentTrackData["uri"] as string,
                       album: {
                         name: albumName,
-                        images: albumImages,
+                        images:
+                          album &&
+                          Array.isArray(album["images"]) &&
+                          album["images"].length > 0
+                            ? (album["images"] as {
+                                url: string;
+                                height: number;
+                                width: number;
+                              }[])
+                            : undefined,
                       },
                       artists: Array.isArray(currentTrackData["artists"])
                         ? (currentTrackData[
@@ -330,9 +395,14 @@ export default function SpotifyPlayer({
                           : 0,
                     };
 
+                    debugLog("✅ Successfully parsed current track:", {
+                      id: validTrack.id,
+                      name: validTrack.name,
+                      album: validTrack.album.name,
+                    });
                     setCurrentTrack(validTrack);
                   } catch (parseError) {
-                    console.error("❌ Error parsing track data:", parseError);
+                    debugLog("❌ Error parsing track data:", parseError);
                   }
                 }
               }
@@ -342,6 +412,7 @@ export default function SpotifyPlayer({
 
               // Handle track end
               if (isPaused && position === 0 && onTrackEnd) {
+                debugLog("🔄 Track ended, calling onTrackEnd callback");
                 onTrackEnd();
               }
             }
@@ -352,14 +423,17 @@ export default function SpotifyPlayer({
             const deviceId =
               typeof event["device_id"] === "string" ? event["device_id"] : "";
             if (!deviceId) {
-              console.error("❌ Ready event missing device ID");
+              debugLog("❌ Ready event missing device ID");
               return;
             }
 
-            console.log("✅ Player ready with Device ID", deviceId);
+            debugLog("✅ Player ready with Device ID:", deviceId);
             setDeviceId(deviceId);
             setIsReady(true);
-            if (onPlayerReady) onPlayerReady();
+            if (onPlayerReady) {
+              debugLog("🔄 Calling onPlayerReady callback");
+              onPlayerReady();
+            }
           });
 
           // Not Ready
@@ -370,26 +444,26 @@ export default function SpotifyPlayer({
                 typeof event["device_id"] === "string"
                   ? event["device_id"]
                   : "unknown";
-              console.log("❌ Device ID has gone offline", deviceId);
+              debugLog("❌ Device ID has gone offline:", deviceId);
               setIsReady(false);
             }
           );
 
           // Connect to the player
-          console.log("🔄 Connecting to Spotify player...");
+          debugLog("🔄 Connecting to Spotify player...");
           newPlayer
             .connect()
-            .then((success) => {
+            .then((success: boolean) => {
               if (success) {
-                console.log("✅ Player connected successfully");
+                debugLog("✅ Player connected successfully");
                 setPlayer(newPlayer);
               } else {
-                console.error("❌ Player failed to connect");
+                debugLog("❌ Player failed to connect");
                 setError("Failed to connect to Spotify. Please try again.");
               }
             })
-            .catch((err) => {
-              console.error("❌ Error connecting to player:", err);
+            .catch((err: Error) => {
+              debugLog("❌ Error connecting to player:", err);
               setError(
                 "Error connecting to Spotify player. Please refresh and try again."
               );
@@ -397,7 +471,7 @@ export default function SpotifyPlayer({
 
           return newPlayer;
         } catch (error) {
-          console.error("❌ Error initializing player:", error);
+          debugLog("❌ Error initializing player:", error);
           setError(
             "Failed to initialize Spotify player. Please refresh the page."
           );
@@ -408,17 +482,19 @@ export default function SpotifyPlayer({
       try {
         // Initialize player when SDK is ready
         if (window.Spotify) {
+          debugLog("🔄 Window.Spotify is available, initializing player");
           const newPlayer = initializePlayer();
 
           // Check if player was created successfully
           if (!newPlayer) {
-            console.error("❌ Player initialization failed");
+            debugLog("❌ Player initialization failed");
             playerInitialized.current = false; // Allow retry
           }
         } else {
           // Set up event listener for when SDK becomes ready
+          debugLog("🔄 Setting up onSpotifyWebPlaybackSDKReady callback");
           const spotifyCallback = () => {
-            console.log("🔄 Spotify Web Playback SDK is ready");
+            debugLog("🔄 Spotify Web Playback SDK is ready");
             const newPlayer = initializePlayer();
             if (newPlayer) {
               setPlayer(newPlayer);
@@ -428,7 +504,7 @@ export default function SpotifyPlayer({
           window.onSpotifyWebPlaybackSDKReady = spotifyCallback;
         }
       } catch (err) {
-        console.error("❌ Unexpected error during player setup:", err);
+        debugLog("❌ Unexpected error during player setup:", err);
         setError("An unexpected error occurred. Please refresh the page.");
         playerInitialized.current = false; // Allow retry
       }
@@ -436,14 +512,15 @@ export default function SpotifyPlayer({
 
     // Return cleanup function
     return () => {
+      debugLog("🧹 Cleaning up player initialization");
       clearTimeout(initTimer);
 
       if (player) {
-        console.log("🧹 Disconnecting player on cleanup");
+        debugLog("🧹 Disconnecting player on cleanup");
         try {
           player.disconnect();
         } catch (err) {
-          console.error("❌ Error during player disconnect:", err);
+          debugLog("❌ Error during player disconnect:", err);
         }
       }
 
@@ -452,6 +529,7 @@ export default function SpotifyPlayer({
         typeof window !== "undefined" &&
         window.onSpotifyWebPlaybackSDKReady
       ) {
+        debugLog("🧹 Cleaning up onSpotifyWebPlaybackSDKReady callback");
         window.onSpotifyWebPlaybackSDKReady = null as unknown as () => void;
       }
 
@@ -471,7 +549,7 @@ export default function SpotifyPlayer({
     let playTimer: NodeJS.Timeout | null = null;
 
     if (!deviceId || !trackUri || !isReady) {
-      console.log("🔍 Not ready to play:", {
+      debugLog("🔍 Not ready to play:", {
         hasDeviceId: !!deviceId,
         hasTrackUri: !!trackUri,
         isReady,
@@ -480,17 +558,17 @@ export default function SpotifyPlayer({
       return;
     }
 
-    console.log("🔄 Attempting to play track:", trackUri);
+    debugLog("🔄 Attempting to play track:", trackUri);
 
     // Add a slight delay to ensure player is fully ready
     playTimer = setTimeout(() => {
       const playTrack = async () => {
         try {
-          console.log(`🔄 Playing track on device ${deviceId}`);
+          debugLog(`🔄 Playing track on device ${deviceId}`);
 
           // Ensure we still have a valid accessToken
           if (!accessToken) {
-            console.error("❌ No access token available for playback");
+            debugLog("❌ No access token available for playback");
             setError("Authentication error. Please log in again.");
             // Redirect to login on missing token
             window.location.href = "/api/auth/login";
@@ -503,10 +581,21 @@ export default function SpotifyPlayer({
             typeof trackUri !== "string" ||
             !trackUri.startsWith("spotify:track:")
           ) {
-            console.error("❌ Invalid track URI:", trackUri);
+            debugLog("❌ Invalid track URI:", trackUri);
             setError("Invalid track format. Please try another song.");
             return;
           }
+
+          // Log the exact request we're about to make
+          debugLog("🔄 Making play request:", {
+            url: `https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`,
+            method: "PUT",
+            body: JSON.stringify({ uris: [trackUri] }),
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${accessToken.substring(0, 10)}...`,
+            },
+          });
 
           // Try to use the API endpoint with proper error handling
           try {
@@ -528,14 +617,22 @@ export default function SpotifyPlayer({
             const isJson =
               contentType && contentType.includes("application/json");
 
+            debugLog("🔄 Received play response:", {
+              status: playResponse.status,
+              statusText: playResponse.statusText,
+              contentType,
+              isJson,
+              headers: Object.fromEntries(playResponse.headers.entries()),
+            });
+
             if (playResponse.ok) {
-              console.log("✅ Track playback initiated successfully");
+              debugLog("✅ Track playback initiated successfully");
               setIsPlaying(true);
               setError(null);
             } else {
               // Handle specific auth errors
               if (playResponse.status === 401) {
-                console.error("❌ Authentication token expired or invalid");
+                debugLog("❌ Authentication token expired or invalid");
                 setError(
                   "Your Spotify session has expired. Please log in again."
                 );
@@ -547,10 +644,13 @@ export default function SpotifyPlayer({
 
               // Try to read the error body, but don't fail if we can't
               let errorMessage = playResponse.statusText || "Unknown error";
+              let errorData = null;
 
               if (isJson) {
                 try {
-                  const errorData = await playResponse.json();
+                  errorData = await playResponse.json();
+                  debugLog("🔄 Error response body:", errorData);
+
                   if (errorData && errorData.error && errorData.error.message) {
                     errorMessage = errorData.error.message;
 
@@ -560,7 +660,7 @@ export default function SpotifyPlayer({
                       errorData.error.message.includes("auth") ||
                       errorData.error.message.includes("premium")
                     ) {
-                      console.error(
+                      debugLog(
                         "❌ Spotify subscription or auth issue:",
                         errorMessage
                       );
@@ -578,17 +678,21 @@ export default function SpotifyPlayer({
                     }
                   }
                 } catch (parseError) {
-                  console.error(
-                    "❌ Could not parse error response:",
-                    parseError
-                  );
+                  debugLog("❌ Could not parse error response:", parseError);
+                }
+              } else {
+                // If it's not JSON, log the text response if possible
+                try {
+                  const textResponse = await playResponse.text();
+                  debugLog("🔄 Non-JSON error response:", textResponse);
+                } catch (textError) {
+                  debugLog("❌ Could not read response text:", textError);
                 }
               }
 
-              console.error(
+              debugLog(
                 "❌ Error playing track:",
-                playResponse.status,
-                errorMessage
+                `${playResponse.status} - ${errorMessage}`
               );
 
               if (playResponse.status === 404) {
@@ -605,11 +709,12 @@ export default function SpotifyPlayer({
 
               // If the player failed, automatically try a different track
               if (onTrackEnd) {
+                debugLog("🔄 Play failed, trying next track");
                 onTrackEnd();
               }
             }
           } catch (apiError) {
-            console.error("❌ Error playing track via API:", apiError);
+            debugLog("❌ Error playing track via API:", apiError);
             setError("Network error playing track. Please try again.");
 
             if (onPlayerError) {
@@ -618,11 +723,12 @@ export default function SpotifyPlayer({
 
             // If we failed completely, try a different track
             if (onTrackEnd) {
+              debugLog("🔄 Network error, trying next track");
               onTrackEnd();
             }
           }
         } catch (err) {
-          console.error("❌ Error playing track:", err);
+          debugLog("❌ Error playing track:", err);
           setError("Failed to play track. Please try again.");
 
           if (onPlayerError) {
@@ -631,6 +737,7 @@ export default function SpotifyPlayer({
 
           // If we failed completely, try a different track
           if (onTrackEnd) {
+            debugLog("🔄 General error, trying next track");
             onTrackEnd();
           }
         }
@@ -640,6 +747,7 @@ export default function SpotifyPlayer({
     }, 1000); // 1 second delay
 
     return () => {
+      debugLog("🧹 Cleaning up play track timer");
       if (playTimer) clearTimeout(playTimer);
     };
   }, [
@@ -660,10 +768,10 @@ export default function SpotifyPlayer({
     }
 
     try {
-      console.log("🔄 Toggling playback");
+      debugLog("🔄 Toggling playback");
       await player.togglePlay();
     } catch (err) {
-      console.error("❌ Error toggling playback:", err);
+      debugLog("❌ Error toggling playback:", err);
       setError("Failed to toggle playback. Please try again.");
     }
   };
@@ -674,16 +782,16 @@ export default function SpotifyPlayer({
 
     try {
       if (isMuted) {
-        console.log("🔄 Unmuting player");
+        debugLog("🔄 Unmuting player");
         player.setVolume(volume);
         setIsMuted(false);
       } else {
-        console.log("🔄 Muting player");
+        debugLog("🔄 Muting player");
         player.setVolume(0);
         setIsMuted(true);
       }
     } catch (err) {
-      console.error("❌ Error toggling mute:", err);
+      debugLog("❌ Error toggling mute:", err);
       setError("Failed to toggle mute. Please try again.");
     }
   };
@@ -694,7 +802,7 @@ export default function SpotifyPlayer({
     setVolume(newVolume);
 
     if (player) {
-      console.log(`🔄 Setting volume to ${newVolume}`);
+      debugLog(`🔄 Setting volume to ${newVolume}`);
       player.setVolume(newVolume);
       setIsMuted(newVolume === 0);
     }
@@ -702,7 +810,7 @@ export default function SpotifyPlayer({
 
   // Retry player initialization
   const retryInitialization = () => {
-    console.log("🔄 Retrying player initialization");
+    debugLog("🔄 Retrying player initialization");
     setError(null);
     playerInitialized.current = false;
 
@@ -710,7 +818,7 @@ export default function SpotifyPlayer({
       try {
         player.disconnect();
       } catch (err) {
-        console.error("❌ Error during disconnect on retry:", err);
+        debugLog("❌ Error during disconnect on retry:", err);
       }
     }
 
