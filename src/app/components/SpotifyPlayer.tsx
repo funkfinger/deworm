@@ -1,13 +1,52 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faPlay,
   faPause,
   faVolumeHigh,
   faVolumeMute,
+  faRotateRight,
 } from "@fortawesome/free-solid-svg-icons";
+
+// Types for Spotify objects
+interface SpotifyTrack {
+  id: string;
+  name: string;
+  uri: string;
+  album: {
+    name: string;
+    images?: Array<{
+      url: string;
+      height: number;
+      width: number;
+    }>;
+  };
+  artists?: Array<{
+    name: string;
+  }>;
+  duration_ms: number;
+}
+
+// Spotify event interfaces
+interface SpotifyError {
+  message: string;
+}
+
+interface SpotifyPlayerState {
+  paused: boolean;
+  position: number;
+  track_window: {
+    current_track: SpotifyTrack;
+    previous_tracks: SpotifyTrack[];
+    next_tracks: SpotifyTrack[];
+  };
+}
+
+interface SpotifyReadyEvent {
+  device_id: string;
+}
 
 type SpotifyPlayerProps = {
   accessToken: string;
@@ -30,139 +69,289 @@ export default function SpotifyPlayer({
   const [deviceId, setDeviceId] = useState<string>("");
   const [volume, setVolume] = useState(0.5);
   const [isMuted, setIsMuted] = useState(false);
-  const [currentTrack, setCurrentTrack] = useState<any>(null);
+  const [currentTrack, setCurrentTrack] = useState<SpotifyTrack | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
+  const [sdkLoaded, setSdkLoaded] = useState(false);
+  const playerInitialized = useRef(false);
 
-  // Initialize Spotify Player when component mounts
+  // Load Spotify Web Playback SDK script
   useEffect(() => {
-    // Load Spotify Web Playback SDK script
-    if (!window.Spotify) {
-      const script = document.createElement("script");
-      script.src = "https://sdk.scdn.co/spotify-player.js";
-      script.async = true;
-      document.body.appendChild(script);
+    if (window.Spotify) {
+      setSdkLoaded(true);
+      return;
     }
 
-    // Initialize player when SDK is ready
-    window.onSpotifyWebPlaybackSDKReady = () => {
-      const player = new window.Spotify.Player({
-        name: "Deworm Web Player",
-        getOAuthToken: (callback) => {
-          callback(accessToken);
-        },
-        volume: volume,
-      });
+    console.log("🔄 Loading Spotify Web Playback SDK script...");
+    const script = document.createElement("script");
+    script.src = "https://sdk.scdn.co/spotify-player.js";
+    script.async = true;
 
-      // Error handling
-      player.addListener("initialization_error", ({ message }) => {
-        console.error("Initialization error:", message);
-        setError(`Player initialization failed: ${message}`);
-        if (onPlayerError) onPlayerError(new Error(message));
-      });
-
-      player.addListener("authentication_error", ({ message }) => {
-        console.error("Authentication error:", message);
-        setError(`Authentication failed: ${message}`);
-        if (onPlayerError) onPlayerError(new Error(message));
-      });
-
-      player.addListener("account_error", ({ message }) => {
-        console.error("Account error:", message);
-        setError(`Account error: ${message}`);
-        if (onPlayerError) onPlayerError(new Error(message));
-      });
-
-      player.addListener("playback_error", ({ message }) => {
-        console.error("Playback error:", message);
-        setError(`Playback error: ${message}`);
-        if (onPlayerError) onPlayerError(new Error(message));
-      });
-
-      // Playback status updates
-      player.addListener("player_state_changed", (state) => {
-        if (!state) return;
-
-        // Update track information
-        if (state.track_window.current_track) {
-          setCurrentTrack(state.track_window.current_track);
-        }
-
-        // Update playing state
-        setIsPlaying(!state.paused);
-
-        // Handle track end
-        if (state.paused && state.position === 0 && onTrackEnd) {
-          onTrackEnd();
-        }
-      });
-
-      // Ready
-      player.addListener("ready", ({ device_id }) => {
-        console.log("Ready with Device ID", device_id);
-        setDeviceId(device_id);
-        setIsReady(true);
-        if (onPlayerReady) onPlayerReady();
-      });
-
-      // Not Ready
-      player.addListener("not_ready", ({ device_id }) => {
-        console.log("Device ID has gone offline", device_id);
-        setIsReady(false);
-      });
-
-      // Connect to the player
-      player.connect();
-      setPlayer(player);
-
-      // Cleanup on unmount
-      return () => {
-        player.disconnect();
-      };
+    script.onload = () => {
+      console.log("✅ Spotify SDK script loaded");
+      setSdkLoaded(true);
     };
+
+    script.onerror = () => {
+      console.error("❌ Failed to load Spotify SDK");
+      setError(
+        "Failed to load Spotify player. Please refresh the page and try again."
+      );
+    };
+
+    document.body.appendChild(script);
 
     return () => {
-      // Cleanup Spotify SDK script when component unmounts
-      if (window.Spotify) {
-        delete window.onSpotifyWebPlaybackSDKReady;
+      if (script.parentNode) {
+        script.parentNode.removeChild(script);
       }
     };
-  }, [accessToken, onPlayerReady, onPlayerError, onTrackEnd, volume]);
+  }, []);
 
-  // Play a track when trackUri changes
+  // Initialize Spotify Player when SDK is loaded
   useEffect(() => {
-    if (!deviceId || !trackUri || !isReady) return;
+    if (!sdkLoaded || !accessToken || playerInitialized.current) return;
 
-    const playTrack = async () => {
+    console.log("🔄 Setting up Spotify Web Playback SDK...");
+    playerInitialized.current = true;
+
+    const initializePlayer = () => {
       try {
-        await fetch(
-          `https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`,
-          {
-            method: "PUT",
-            body: JSON.stringify({ uris: [trackUri] }),
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${accessToken}`,
-            },
+        console.log("🔄 Initializing Spotify player with token...");
+        const player = new window.Spotify.Player({
+          name: "Deworm Web Player",
+          getOAuthToken: (callback) => {
+            console.log("🔄 Providing OAuth token to player");
+            callback(accessToken);
+          },
+          volume: volume,
+        });
+
+        // Error handling
+        player.addListener("initialization_error", (event: SpotifyError) => {
+          console.error("❌ Initialization error:", event.message);
+          setError(`Player initialization failed: ${event.message}`);
+          if (onPlayerError) onPlayerError(new Error(event.message));
+        });
+
+        player.addListener("authentication_error", (event: SpotifyError) => {
+          console.error("❌ Authentication error:", event.message);
+          setError(`Authentication failed: ${event.message}`);
+          if (onPlayerError) onPlayerError(new Error(event.message));
+        });
+
+        player.addListener("account_error", (event: SpotifyError) => {
+          console.error("❌ Account error:", event.message);
+          setError(`Account error: ${event.message}`);
+          if (onPlayerError) onPlayerError(new Error(event.message));
+        });
+
+        player.addListener("playback_error", (event: SpotifyError) => {
+          console.error("❌ Playback error:", event.message);
+          setError(`Playback error: ${event.message}`);
+          if (onPlayerError) onPlayerError(new Error(event.message));
+        });
+
+        // Playback status updates
+        player.addListener(
+          "player_state_changed",
+          (state: SpotifyPlayerState | null) => {
+            if (!state) {
+              console.log("🔍 Player state changed but state is null");
+              return;
+            }
+
+            console.log("🔍 Player state changed:", {
+              paused: state.paused,
+              position: state.position,
+              track: state.track_window.current_track?.name,
+            });
+
+            // Update track information
+            if (state.track_window.current_track) {
+              setCurrentTrack(state.track_window.current_track);
+            }
+
+            // Update playing state
+            setIsPlaying(!state.paused);
+
+            // Handle track end
+            if (state.paused && state.position === 0 && onTrackEnd) {
+              onTrackEnd();
+            }
           }
         );
-        setIsPlaying(true);
-      } catch (err) {
-        console.error("Error playing track:", err);
-        setError("Failed to play track. Please try again.");
+
+        // Ready
+        player.addListener("ready", (event: SpotifyReadyEvent) => {
+          console.log("✅ Player ready with Device ID", event.device_id);
+          setDeviceId(event.device_id);
+          setIsReady(true);
+          if (onPlayerReady) onPlayerReady();
+        });
+
+        // Not Ready
+        player.addListener("not_ready", (event: SpotifyReadyEvent) => {
+          console.log("❌ Device ID has gone offline", event.device_id);
+          setIsReady(false);
+        });
+
+        // Connect to the player
+        console.log("🔄 Connecting to Spotify player...");
+        player
+          .connect()
+          .then((success) => {
+            if (success) {
+              console.log("✅ Player connected successfully");
+              setPlayer(player);
+            } else {
+              console.error("❌ Player failed to connect");
+              setError("Failed to connect to Spotify. Please try again.");
+            }
+          })
+          .catch((err) => {
+            console.error("❌ Error connecting to player:", err);
+            setError(
+              "Error connecting to Spotify player. Please refresh and try again."
+            );
+          });
+
+        return player;
+      } catch (error) {
+        console.error("❌ Error initializing player:", error);
+        setError(
+          "Failed to initialize Spotify player. Please refresh the page."
+        );
+        return null;
       }
     };
 
-    playTrack();
-  }, [accessToken, deviceId, isReady, trackUri]);
+    // Initialize player when SDK is ready
+    if (window.Spotify) {
+      const newPlayer = initializePlayer();
+
+      // Return cleanup function
+      return () => {
+        if (newPlayer) {
+          console.log("🧹 Disconnecting player on cleanup");
+          newPlayer.disconnect();
+          playerInitialized.current = false;
+        }
+      };
+    } else {
+      // Set up event listener for when SDK becomes ready
+      const spotifyCallback = () => {
+        console.log("🔄 Spotify Web Playback SDK is ready");
+        const newPlayer = initializePlayer();
+        if (newPlayer) {
+          setPlayer(newPlayer);
+        }
+      };
+
+      window.onSpotifyWebPlaybackSDKReady = spotifyCallback;
+
+      // Return cleanup function
+      return () => {
+        if (window.Spotify && player) {
+          console.log("🧹 Disconnecting player and cleanup");
+          player.disconnect();
+          playerInitialized.current = false;
+        }
+        // Remove callback safely
+        if (window.onSpotifyWebPlaybackSDKReady === spotifyCallback) {
+          window.onSpotifyWebPlaybackSDKReady = null;
+        }
+      };
+    }
+  }, [
+    accessToken,
+    onPlayerReady,
+    onPlayerError,
+    onTrackEnd,
+    volume,
+    sdkLoaded,
+  ]);
+
+  // Play a track when trackUri changes and the player is ready
+  useEffect(() => {
+    if (!deviceId || !trackUri || !isReady || !player) {
+      console.log("🔍 Not ready to play:", {
+        hasDeviceId: !!deviceId,
+        hasTrackUri: !!trackUri,
+        isReady,
+        hasPlayer: !!player,
+      });
+      return;
+    }
+
+    console.log("🔄 Attempting to play track:", trackUri);
+
+    // Add a slight delay to ensure player is fully ready
+    const playTimer = setTimeout(() => {
+      const playTrack = async () => {
+        try {
+          console.log(`🔄 Playing track on device ${deviceId}`);
+
+          const response = await fetch(
+            `https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`,
+            {
+              method: "PUT",
+              body: JSON.stringify({ uris: [trackUri] }),
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${accessToken}`,
+              },
+            }
+          );
+
+          if (response.ok) {
+            console.log("✅ Track playback initiated successfully");
+            setIsPlaying(true);
+            setError(null);
+          } else {
+            const errorData = await response.json().catch(() => ({}));
+            console.error(
+              "❌ Error playing track:",
+              response.status,
+              errorData
+            );
+
+            if (response.status === 404) {
+              setError("Player not found. Try refreshing the page.");
+            } else if (response.status === 403) {
+              setError("Premium account required for playback.");
+            } else {
+              setError(
+                `Failed to play track: ${
+                  errorData.error?.message || response.statusText
+                }`
+              );
+            }
+          }
+        } catch (err) {
+          console.error("❌ Error playing track:", err);
+          setError("Failed to play track. Please try again.");
+        }
+      };
+
+      playTrack();
+    }, 1000); // 1 second delay
+
+    return () => clearTimeout(playTimer);
+  }, [accessToken, deviceId, isReady, trackUri, player]);
 
   // Toggle play/pause
   const togglePlayback = async () => {
-    if (!player) return;
+    if (!player) {
+      setError("Player not initialized. Please refresh the page.");
+      return;
+    }
 
     try {
+      console.log("🔄 Toggling playback");
       await player.togglePlay();
     } catch (err) {
-      console.error("Error toggling playback:", err);
+      console.error("❌ Error toggling playback:", err);
       setError("Failed to toggle playback. Please try again.");
     }
   };
@@ -173,14 +362,16 @@ export default function SpotifyPlayer({
 
     try {
       if (isMuted) {
+        console.log("🔄 Unmuting player");
         player.setVolume(volume);
         setIsMuted(false);
       } else {
+        console.log("🔄 Muting player");
         player.setVolume(0);
         setIsMuted(true);
       }
     } catch (err) {
-      console.error("Error toggling mute:", err);
+      console.error("❌ Error toggling mute:", err);
       setError("Failed to toggle mute. Please try again.");
     }
   };
@@ -191,15 +382,40 @@ export default function SpotifyPlayer({
     setVolume(newVolume);
 
     if (player) {
+      console.log(`🔄 Setting volume to ${newVolume}`);
       player.setVolume(newVolume);
       setIsMuted(newVolume === 0);
     }
   };
 
+  // Retry player initialization
+  const retryInitialization = () => {
+    console.log("🔄 Retrying player initialization");
+    setError(null);
+    setRetryCount((prev) => prev + 1);
+    playerInitialized.current = false;
+
+    if (player) {
+      player.disconnect();
+    }
+
+    setPlayer(null);
+    setIsReady(false);
+  };
+
   if (error) {
     return (
-      <div className="alert alert-error">
-        <span>{error}</span>
+      <div className="flex flex-col gap-4">
+        <div className="alert alert-error">
+          <span>{error}</span>
+        </div>
+        <button
+          onClick={retryInitialization}
+          className="btn btn-outline btn-sm"
+        >
+          <FontAwesomeIcon icon={faRotateRight} className="mr-2" />
+          Retry
+        </button>
       </div>
     );
   }
@@ -248,10 +464,9 @@ export default function SpotifyPlayer({
 
           <div className="flex items-center space-x-2 flex-1 ml-4">
             <button
-              className="btn btn-sm btn-ghost btn-circle"
+              className="btn btn-circle btn-sm"
               onClick={toggleMute}
               disabled={!isReady}
-              data-testid="mute-button"
             >
               <FontAwesomeIcon icon={isMuted ? faVolumeMute : faVolumeHigh} />
             </button>
@@ -262,17 +477,24 @@ export default function SpotifyPlayer({
               step="0.01"
               value={volume}
               onChange={handleVolumeChange}
+              className="range range-primary range-xs"
               disabled={!isReady}
-              className="range range-xs range-primary flex-1"
             />
           </div>
         </div>
+
+        {!isReady && (
+          <div className="text-center mt-4">
+            <span className="loading loading-spinner loading-sm mr-2"></span>
+            <span className="text-sm opacity-75">Connecting to Spotify...</span>
+          </div>
+        )}
       </div>
     </div>
   );
 }
 
-// Add TypeScript type declaration for Spotify Web Playback SDK
+// Extend Window interface to include Spotify SDK
 declare global {
   interface Window {
     Spotify: {
@@ -282,12 +504,12 @@ declare global {
         volume: number;
       }) => Spotify.Player;
     };
-    onSpotifyWebPlaybackSDKReady: () => void;
+    onSpotifyWebPlaybackSDKReady: (() => void) | null;
   }
 }
 
-// Spotify namespace
-namespace Spotify {
+// Spotify Player Interface
+declare namespace Spotify {
   export interface Player {
     connect(): Promise<boolean>;
     disconnect(): void;
@@ -296,7 +518,13 @@ namespace Spotify {
     pause(): Promise<void>;
     resume(): Promise<void>;
     seek(position_ms: number): Promise<void>;
-    addListener(event: string, callback: (event: any) => void): void;
-    removeListener(event: string, callback?: (event: any) => void): void;
+    addListener(
+      event: string,
+      callback: (event: Record<string, unknown>) => void
+    ): void;
+    removeListener(
+      event: string,
+      callback?: (event: Record<string, unknown>) => void
+    ): void;
   }
 }
