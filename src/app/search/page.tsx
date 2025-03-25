@@ -134,11 +134,14 @@ export default function SearchPage() {
       uri: track.uri,
     });
 
-    // Add album image if available
+    // Add album image if available with more robust null checks
     if (
+      track.album &&
       track.album.images &&
+      Array.isArray(track.album.images) &&
       track.album.images.length > 0 &&
-      track.album.images[0]
+      track.album.images[0] &&
+      track.album.images[0].url
     ) {
       params.append("image", track.album.images[0].url);
     }
@@ -184,8 +187,10 @@ export default function SearchPage() {
           {userProfile && (
             <div className="flex items-center mt-4 mb-2">
               {userProfile.images &&
+                Array.isArray(userProfile.images) &&
                 userProfile.images.length > 0 &&
-                userProfile.images[0]?.url && (
+                userProfile.images[0] &&
+                userProfile.images[0].url && (
                   <div className="avatar mr-2">
                     <div className="w-8 h-8 rounded-full">
                       <img
@@ -195,7 +200,9 @@ export default function SearchPage() {
                     </div>
                   </div>
                 )}
-              <span className="font-medium">{userProfile.display_name}</span>
+              <span className="font-medium">
+                {userProfile.display_name || "Spotify User"}
+              </span>
             </div>
           )}
         </div>
@@ -263,18 +270,25 @@ export default function SearchPage() {
                   <div className="card-body">
                     <h2 className="card-title">Your Earworm</h2>
                     <div className="flex items-center space-x-4">
-                      {earwormTrack.album.images &&
-                        earwormTrack.album.images[0] && (
+                      {earwormTrack.album &&
+                        earwormTrack.album.images &&
+                        Array.isArray(earwormTrack.album.images) &&
+                        earwormTrack.album.images.length > 0 &&
+                        earwormTrack.album.images[0] &&
+                        earwormTrack.album.images[0].url && (
                           <img
                             src={earwormTrack.album.images[0].url}
-                            alt={earwormTrack.album.name}
+                            alt={earwormTrack.album.name || "Album cover"}
                             className="w-16 h-16 rounded-md"
                           />
                         )}
                       <div>
                         <h3 className="font-bold">{earwormTrack.name}</h3>
                         <p className="text-sm opacity-75">
-                          {earwormTrack.artists.map((a) => a.name).join(", ")}
+                          {earwormTrack.artists &&
+                          Array.isArray(earwormTrack.artists)
+                            ? earwormTrack.artists.map((a) => a.name).join(", ")
+                            : "Unknown artist"}
                         </p>
                       </div>
                     </div>
@@ -285,11 +299,19 @@ export default function SearchPage() {
                         }&trackName=${encodeURIComponent(
                           earwormTrack.name
                         )}&artist=${encodeURIComponent(
-                          earwormTrack.artists.map((a) => a.name).join(", ")
+                          earwormTrack.artists &&
+                            Array.isArray(earwormTrack.artists)
+                            ? earwormTrack.artists.map((a) => a.name).join(", ")
+                            : "Unknown artist"
                         )}&uri=${encodeURIComponent(
                           earwormTrack.uri
                         )}&image=${encodeURIComponent(
-                          earwormTrack.album.images?.[0]?.url || ""
+                          (earwormTrack.album &&
+                            earwormTrack.album.images &&
+                            Array.isArray(earwormTrack.album.images) &&
+                            earwormTrack.album.images[0] &&
+                            earwormTrack.album.images[0].url) ||
+                            ""
                         )}`}
                         className="btn btn-primary"
                       >
