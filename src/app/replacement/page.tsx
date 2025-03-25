@@ -111,20 +111,36 @@ export default function ReplacementPage() {
           getReplacementPlaylistTracks(50, 0),
         ]);
 
-        setPlaylistInfo(infoResponse);
-        setPlaylistTracks(tracksResponse.items);
+        // Ensure we have valid data before setting state
+        if (infoResponse) {
+          setPlaylistInfo(infoResponse);
+        } else {
+          console.error("Invalid playlist info response:", infoResponse);
+        }
+
+        // Make sure tracksResponse exists and has items array before setting state
+        if (tracksResponse && Array.isArray(tracksResponse.items)) {
+          setPlaylistTracks(tracksResponse.items);
+
+          // Automatically select a random track as recommendation
+          if (tracksResponse.items.length > 0) {
+            const randomIndex = Math.floor(
+              Math.random() * tracksResponse.items.length
+            );
+
+            const randomTrack = tracksResponse.items[randomIndex]?.track;
+            if (randomTrack) {
+              setSelectedTrack(randomTrack);
+              setShowPlayer(true);
+            }
+          }
+        } else {
+          console.error("Invalid tracks response:", tracksResponse);
+          setPlaylistTracks([]);
+        }
 
         // Check if earworm is already in the playlist
         await checkAndAddEarwormToPlaylist();
-
-        // Automatically select a random track as recommendation
-        if (tracksResponse.items.length > 0) {
-          const randomIndex = Math.floor(
-            Math.random() * tracksResponse.items.length
-          );
-          setSelectedTrack(tracksResponse.items[randomIndex].track);
-          setShowPlayer(true);
-        }
       } catch (err) {
         console.error("Error loading playlist data:", err);
         setError("Failed to load replacement songs. Please try again.");
@@ -147,23 +163,30 @@ export default function ReplacementPage() {
       let hasMore = true;
 
       while (hasMore) {
-        const response = await getReplacementPlaylistTracks(100, offset);
-        if (response && response.items) {
-          allPlaylistTracks = [...allPlaylistTracks, ...response.items];
+        try {
+          const response = await getReplacementPlaylistTracks(100, offset);
 
-          if (response.next) {
-            offset += 100;
+          if (response && Array.isArray(response.items)) {
+            allPlaylistTracks = [...allPlaylistTracks, ...response.items];
+
+            if (response.next) {
+              offset += 100;
+            } else {
+              hasMore = false;
+            }
           } else {
+            console.error("Invalid response format:", response);
             hasMore = false;
           }
-        } else {
+        } catch (fetchError) {
+          console.error("Error fetching playlist tracks:", fetchError);
           hasMore = false;
         }
       }
 
-      // Check if the track exists in the playlist
+      // Check if the track exists in the playlist with proper null checking
       const trackExists = allPlaylistTracks.some(
-        (item) => item.track && item.track.id === earwormId
+        (item) => item && item.track && item.track.id === earwormId
       );
 
       if (!trackExists) {
@@ -218,23 +241,37 @@ export default function ReplacementPage() {
   };
 
   const handleReplaceAgain = () => {
-    if (playlistTracks.length > 0) {
+    // Only proceed if playlistTracks is defined and not empty
+    if (playlistTracks && playlistTracks.length > 0) {
       // Select a different random track
       let randomIndex;
+      let attemptCount = 0;
+      const maxAttempts = 5; // Prevent infinite loop
+      let trackToSelect = null;
+
       do {
         randomIndex = Math.floor(Math.random() * playlistTracks.length);
+        trackToSelect = playlistTracks[randomIndex]?.track;
+        attemptCount++;
       } while (
         selectedTrack &&
-        playlistTracks[randomIndex]?.track?.id === selectedTrack.id &&
-        playlistTracks.length > 1
+        trackToSelect &&
+        trackToSelect.id === selectedTrack.id &&
+        playlistTracks.length > 1 &&
+        attemptCount < maxAttempts
       );
 
       // Ensure we have a valid track before setting it
-      const trackToSelect = playlistTracks[randomIndex]?.track;
       if (trackToSelect) {
         setSelectedTrack(trackToSelect);
         setShowPlayer(true);
+      } else {
+        console.error("Could not find a valid track to select");
+        setError("Could not find a valid replacement track. Please try again.");
       }
+    } else {
+      console.error("No playlist tracks available");
+      setError("No replacement tracks available. Please try again later.");
     }
   };
 

@@ -68,7 +68,8 @@ export default function SpotifyPlayer({
   onPlayerError,
   onTrackEnd,
 }: SpotifyPlayerProps) {
-  const [player, setPlayer] = useState<Spotify.Player | null>(null);
+  // Use Player interface directly without namespace
+  const [player, setPlayer] = useState<Player | null>(null);
   const [isReady, setIsReady] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [deviceId, setDeviceId] = useState<string>("");
@@ -386,7 +387,9 @@ export default function SpotifyPlayer({
 
   // Play a track when trackUri changes and the player is ready
   useEffect(() => {
-    if (!deviceId || !trackUri || !isReady || !player) {
+    let playTimer: NodeJS.Timeout | null = null;
+
+    if (!deviceId || !trackUri || !isReady) {
       console.log("🔍 Not ready to play:", {
         hasDeviceId: !!deviceId,
         hasTrackUri: !!trackUri,
@@ -399,7 +402,7 @@ export default function SpotifyPlayer({
     console.log("🔄 Attempting to play track:", trackUri);
 
     // Add a slight delay to ensure player is fully ready
-    const playTimer = setTimeout(() => {
+    playTimer = setTimeout(() => {
       const playTrack = async () => {
         try {
           console.log(`🔄 Playing track on device ${deviceId}`);
@@ -411,9 +414,20 @@ export default function SpotifyPlayer({
             return;
           }
 
-          // Try to use the player directly first if possible
+          // First verify the track URI is valid
+          if (
+            !trackUri ||
+            typeof trackUri !== "string" ||
+            !trackUri.startsWith("spotify:track:")
+          ) {
+            console.error("❌ Invalid track URI:", trackUri);
+            setError("Invalid track format. Please try another song.");
+            return;
+          }
+
+          // Try to use the API endpoint with proper error handling
           try {
-            await fetch(
+            const playResponse = await fetch(
               `https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`,
               {
                 method: "PUT",
@@ -424,57 +438,78 @@ export default function SpotifyPlayer({
                 },
                 redirect: "follow",
               }
-            ).then(async (response) => {
-              if (response.ok) {
-                console.log("✅ Track playback initiated successfully");
-                setIsPlaying(true);
-                setError(null);
-              } else {
-                // Try to read the error body, but don't fail if we can't
-                const errorData: { error?: { message?: string } } = {};
+            );
+
+            // Handle non-JSON responses
+            const contentType = playResponse.headers.get("content-type");
+            const isJson =
+              contentType && contentType.includes("application/json");
+
+            if (playResponse.ok) {
+              console.log("✅ Track playback initiated successfully");
+              setIsPlaying(true);
+              setError(null);
+            } else {
+              // Try to read the error body, but don't fail if we can't
+              let errorMessage = playResponse.statusText || "Unknown error";
+
+              if (isJson) {
                 try {
-                  const jsonData = await response.json();
-                  if (jsonData && typeof jsonData === "object") {
-                    Object.assign(errorData, jsonData);
+                  const errorData = await playResponse.json();
+                  if (errorData && errorData.error && errorData.error.message) {
+                    errorMessage = errorData.error.message;
                   }
-                } catch (e) {
-                  console.error("❌ Could not parse error response:", e);
-                }
-
-                console.error(
-                  "❌ Error playing track:",
-                  response.status,
-                  errorData
-                );
-
-                if (response.status === 404) {
-                  setError("Player not found. Try refreshing the page.");
-                } else if (response.status === 403) {
-                  setError("Premium account required for playback.");
-                } else {
-                  const errorMessage =
-                    errorData?.error?.message ||
-                    response.statusText ||
-                    "Unknown error";
-                  setError(`Failed to play track: ${errorMessage}`);
+                } catch (parseError) {
+                  console.error(
+                    "❌ Could not parse error response:",
+                    parseError
+                  );
                 }
               }
-            });
-          } catch (err) {
-            console.error("❌ Error playing track via API:", err);
-            setError("Failed to play track. Please try again.");
+
+              console.error(
+                "❌ Error playing track:",
+                playResponse.status,
+                errorMessage
+              );
+
+              if (playResponse.status === 404) {
+                setError("Player not found. Try refreshing the page.");
+              } else if (playResponse.status === 403) {
+                setError("Premium account required for playback.");
+              } else {
+                setError(`Failed to play track: ${errorMessage}`);
+              }
+
+              if (onPlayerError) {
+                onPlayerError(new Error(errorMessage));
+              }
+            }
+          } catch (apiError) {
+            console.error("❌ Error playing track via API:", apiError);
+            setError("Network error playing track. Please try again.");
+
+            if (onPlayerError) {
+              onPlayerError(new Error("Network error playing track"));
+            }
           }
         } catch (err) {
           console.error("❌ Error playing track:", err);
           setError("Failed to play track. Please try again.");
+
+          if (onPlayerError) {
+            onPlayerError(new Error("Failed to play track"));
+          }
         }
       };
 
       playTrack();
     }, 1000); // 1 second delay
 
-    return () => clearTimeout(playTimer);
-  }, [accessToken, deviceId, isReady, trackUri, player]);
+    return () => {
+      if (playTimer) clearTimeout(playTimer);
+    };
+  }, [accessToken, deviceId, isReady, trackUri, player, onPlayerError]);
 
   // Toggle play/pause
   const togglePlayback = async () => {
