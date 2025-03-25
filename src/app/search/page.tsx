@@ -219,61 +219,9 @@ export default function SearchPage() {
             </div>
           </div>
 
-          {results.length > 0 ? (
-            <div className="w-full space-y-4">
-              {results.map((track) => (
-                <div
-                  key={track.id}
-                  className="card card-side bg-base-200 shadow"
-                >
-                  <figure className="m-2">
-                    {track.album.images &&
-                      track.album.images.length > 0 &&
-                      track.album.images[track.album.images.length - 1]
-                        ?.url && (
-                        <div className="avatar">
-                          <div className="w-16 h-16">
-                            <img
-                              src={
-                                track.album.images[
-                                  track.album.images.length - 1
-                                ]?.url
-                              }
-                              alt={track.album.name}
-                            />
-                          </div>
-                        </div>
-                      )}
-                  </figure>
-                  <div className="card-body p-4">
-                    <h2 className="card-title">{track.name}</h2>
-                    <p>{track.artists.map((a) => a.name).join(", ")}</p>
-                    <div className="card-actions justify-between items-center">
-                      <span className="opacity-70">
-                        {formatDuration(track.duration_ms)}
-                      </span>
-                      <div className="flex gap-2">
-                        <button
-                          className="btn btn-sm btn-primary"
-                          onClick={() => handleSelectTrack(track)}
-                        >
-                          Play
-                        </button>
-                        <button
-                          className="btn btn-sm btn-outline"
-                          onClick={() => handleSetAsEarworm(track)}
-                        >
-                          Select as Earworm
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
+          {results.length === 0 && (
             <div className="flex flex-col items-center justify-center">
-              <Mascot mood={results.length > 0 ? "happy" : "sad"} />
+              <Mascot mood="sad" />
               <p className="text-center mt-4 opacity-75">
                 {query
                   ? "No results found. Try another search!"
@@ -289,11 +237,45 @@ export default function SearchPage() {
               <div className="card bg-base-200 shadow-xl mb-6">
                 <div className="card-body">
                   <h2 className="card-title">Now Playing</h2>
+
+                  {/* Track information */}
+                  <div className="flex items-center space-x-4 mb-4">
+                    {selectedTrack.album.images &&
+                      selectedTrack.album.images.length > 0 &&
+                      selectedTrack.album.images[0]?.url && (
+                        <img
+                          src={selectedTrack.album.images[0].url}
+                          alt={selectedTrack.album.name || "Album cover"}
+                          className="w-16 h-16 rounded-md"
+                        />
+                      )}
+                    <div className="flex-1">
+                      <h3 className="font-bold">{selectedTrack.name}</h3>
+                      <p className="text-sm opacity-75">
+                        {selectedTrack.artists.map((a) => a.name).join(", ")}
+                      </p>
+                      <p className="text-xs opacity-70">
+                        {formatDuration(selectedTrack.duration_ms)}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Player component */}
                   <SpotifyPlayer
                     accessToken={accessToken}
                     trackUri={selectedTrack.uri}
                     onPlayerError={(error) => setError(error.message)}
                   />
+
+                  {/* Action buttons */}
+                  <div className="card-actions justify-end mt-4">
+                    <button
+                      className="btn btn-primary"
+                      onClick={() => handleSetAsEarworm(selectedTrack)}
+                    >
+                      Select as Earworm
+                    </button>
+                  </div>
                 </div>
               </div>
 
