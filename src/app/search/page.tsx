@@ -104,7 +104,8 @@ export default function SearchPage() {
     loadAccessToken();
   }, []);
 
-  // Format milliseconds to minutes:seconds
+  // Format milliseconds to minutes:seconds (used elsewhere in the app)
+  /* eslint-disable-next-line @typescript-eslint/no-unused-vars */
   const formatDuration = (ms: number): string => {
     const minutes = Math.floor(ms / 60000);
     const seconds = ((ms % 60000) / 1000).toFixed(0);
@@ -237,28 +238,6 @@ export default function SearchPage() {
               <div className="card bg-base-200 shadow-xl mb-6">
                 <div className="card-body">
                   <h2 className="card-title">Now Playing</h2>
-
-                  {/* Track information */}
-                  <div className="flex items-center space-x-4 mb-4">
-                    {selectedTrack.album.images &&
-                      selectedTrack.album.images.length > 0 &&
-                      selectedTrack.album.images[0]?.url && (
-                        <img
-                          src={selectedTrack.album.images[0].url}
-                          alt={selectedTrack.album.name || "Album cover"}
-                          className="w-16 h-16 rounded-md"
-                        />
-                      )}
-                    <div className="flex-1">
-                      <h3 className="font-bold">{selectedTrack.name}</h3>
-                      <p className="text-sm opacity-75">
-                        {selectedTrack.artists.map((a) => a.name).join(", ")}
-                      </p>
-                      <p className="text-xs opacity-70">
-                        {formatDuration(selectedTrack.duration_ms)}
-                      </p>
-                    </div>
-                  </div>
 
                   {/* Player component */}
                   <SpotifyPlayer
