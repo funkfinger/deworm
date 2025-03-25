@@ -29,16 +29,17 @@ interface SpotifyTrack {
   duration_ms: number;
 }
 
-// Spotify event interfaces with looser typing to match SDK expectations
-interface SpotifyEventBase extends Record<string, unknown> {
-  // Base interface that extends Record<string, unknown> for compatibility
-}
+// Simple helper type for type checking
+type AnyRecord = Record<string, unknown>;
 
-interface SpotifyError extends SpotifyEventBase {
+// Spotify event types with proper typing for SDK compatibility
+type SpotifyEvent = Record<string, unknown>;
+
+interface SpotifyError {
   message: string;
 }
 
-interface SpotifyPlayerState extends SpotifyEventBase {
+interface SpotifyPlayerState {
   paused: boolean;
   position: number;
   track_window: {
@@ -48,7 +49,7 @@ interface SpotifyPlayerState extends SpotifyEventBase {
   };
 }
 
-interface SpotifyReadyEvent extends SpotifyEventBase {
+interface SpotifyReadyEvent {
   device_id: string;
 }
 
@@ -161,83 +162,136 @@ export default function SpotifyPlayer({
           });
 
           // Error handling - use type assertion to match SDK expectations
-          player.addListener("initialization_error", ((event) => {
-            const errorEvent = event as SpotifyError;
-            console.error("❌ Initialization error:", errorEvent.message);
-            setError(`Player initialization failed: ${errorEvent.message}`);
-            if (onPlayerError) onPlayerError(new Error(errorEvent.message));
-          }) as (event: Record<string, unknown>) => void);
+          player.addListener("initialization_error", (event) => {
+            // Type safe access to message property using bracket notation
+            const message =
+              typeof event["message"] === "string"
+                ? event["message"]
+                : "Unknown initialization error";
 
-          player.addListener("authentication_error", ((event) => {
-            const errorEvent = event as SpotifyError;
-            console.error("❌ Authentication error:", errorEvent.message);
-            setError(`Authentication failed: ${errorEvent.message}`);
-            if (onPlayerError) onPlayerError(new Error(errorEvent.message));
-          }) as (event: Record<string, unknown>) => void);
+            console.error("❌ Initialization error:", message);
+            setError(`Player initialization failed: ${message}`);
+            if (onPlayerError) onPlayerError(new Error(message));
+          });
 
-          player.addListener("account_error", ((event) => {
-            const errorEvent = event as SpotifyError;
-            console.error("❌ Account error:", errorEvent.message);
-            setError(`Account error: ${errorEvent.message}`);
-            if (onPlayerError) onPlayerError(new Error(errorEvent.message));
-          }) as (event: Record<string, unknown>) => void);
+          player.addListener("authentication_error", (event) => {
+            const message =
+              typeof event["message"] === "string"
+                ? event["message"]
+                : "Unknown authentication error";
 
-          player.addListener("playback_error", ((event) => {
-            const errorEvent = event as SpotifyError;
-            console.error("❌ Playback error:", errorEvent.message);
-            setError(`Playback error: ${errorEvent.message}`);
-            if (onPlayerError) onPlayerError(new Error(errorEvent.message));
-          }) as (event: Record<string, unknown>) => void);
+            console.error("❌ Authentication error:", message);
+            setError(`Authentication failed: ${message}`);
+            if (onPlayerError) onPlayerError(new Error(message));
+          });
+
+          player.addListener("account_error", (event) => {
+            const message =
+              typeof event["message"] === "string"
+                ? event["message"]
+                : "Unknown account error";
+
+            console.error("❌ Account error:", message);
+            setError(`Account error: ${message}`);
+            if (onPlayerError) onPlayerError(new Error(message));
+          });
+
+          player.addListener("playback_error", (event) => {
+            const message =
+              typeof event["message"] === "string"
+                ? event["message"]
+                : "Unknown playback error";
+
+            console.error("❌ Playback error:", message);
+            setError(`Playback error: ${message}`);
+            if (onPlayerError) onPlayerError(new Error(message));
+          });
 
           // Playback status updates
-          player.addListener("player_state_changed", ((state) => {
+          player.addListener("player_state_changed", (state) => {
             if (!state) {
               console.log("🔍 Player state changed but state is null");
               return;
             }
 
-            // Cast the state to our expected type
-            const playerState = state as SpotifyPlayerState;
+            // Safely access properties with type checks and bracket notation
+            const isPaused =
+              typeof state["paused"] === "boolean" ? state["paused"] : true;
+            const position =
+              typeof state["position"] === "number" ? state["position"] : 0;
+
+            // Safely handle track_window and current_track
+            const trackWindowRaw = state["track_window"] as
+              | AnyRecord
+              | undefined;
+            const currentTrackRaw =
+              trackWindowRaw && typeof trackWindowRaw === "object"
+                ? (trackWindowRaw["current_track"] as AnyRecord | undefined)
+                : undefined;
+
+            // Extract track name safely
+            const currentTrackName =
+              currentTrackRaw &&
+              typeof currentTrackRaw === "object" &&
+              typeof currentTrackRaw["name"] === "string"
+                ? currentTrackRaw["name"]
+                : "unknown";
 
             console.log("🔍 Player state changed:", {
-              paused: playerState.paused,
-              position: playerState.position,
-              track: playerState.track_window?.current_track?.name || "unknown",
+              paused: isPaused,
+              position: position,
+              track: currentTrackName,
             });
 
-            // Update track information
-            if (playerState.track_window?.current_track) {
-              setCurrentTrack(playerState.track_window.current_track);
+            // Update track information if it looks valid
+            if (
+              currentTrackRaw &&
+              typeof currentTrackRaw === "object" &&
+              typeof currentTrackRaw["id"] === "string" &&
+              typeof currentTrackRaw["name"] === "string" &&
+              typeof currentTrackRaw["uri"] === "string"
+            ) {
+              // We have enough information to consider this a valid track
+              setCurrentTrack(currentTrackRaw as unknown as SpotifyTrack);
             }
 
             // Update playing state
-            setIsPlaying(!playerState.paused);
+            setIsPlaying(!isPaused);
 
             // Handle track end
-            if (
-              playerState.paused &&
-              playerState.position === 0 &&
-              onTrackEnd
-            ) {
+            if (isPaused && position === 0 && onTrackEnd) {
               onTrackEnd();
             }
-          }) as (event: Record<string, unknown>) => void);
+          });
 
           // Ready
-          player.addListener("ready", ((event) => {
-            const readyEvent = event as SpotifyReadyEvent;
-            console.log("✅ Player ready with Device ID", readyEvent.device_id);
-            setDeviceId(readyEvent.device_id);
+          player.addListener("ready", (event) => {
+            // Safely access device_id property using bracket notation
+            const deviceId =
+              typeof event["device_id"] === "string" ? event["device_id"] : "";
+
+            if (!deviceId) {
+              console.error("❌ Ready event missing device ID");
+              return;
+            }
+
+            console.log("✅ Player ready with Device ID", deviceId);
+            setDeviceId(deviceId);
             setIsReady(true);
             if (onPlayerReady) onPlayerReady();
-          }) as (event: Record<string, unknown>) => void);
+          });
 
           // Not Ready
-          player.addListener("not_ready", ((event) => {
-            const readyEvent = event as SpotifyReadyEvent;
-            console.log("❌ Device ID has gone offline", readyEvent.device_id);
+          player.addListener("not_ready", (event) => {
+            // Safely access device_id property using bracket notation
+            const deviceId =
+              typeof event["device_id"] === "string"
+                ? event["device_id"]
+                : "unknown";
+
+            console.log("❌ Device ID has gone offline", deviceId);
             setIsReady(false);
-          }) as (event: Record<string, unknown>) => void);
+          });
 
           // Connect to the player
           console.log("🔄 Connecting to Spotify player...");
@@ -357,42 +411,58 @@ export default function SpotifyPlayer({
             return;
           }
 
-          const response = await fetch(
-            `https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`,
-            {
-              method: "PUT",
-              body: JSON.stringify({ uris: [trackUri] }),
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${accessToken}`,
-              },
-              redirect: "follow",
-            }
-          );
+          // Try to use the player directly first if possible
+          try {
+            await fetch(
+              `https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`,
+              {
+                method: "PUT",
+                body: JSON.stringify({ uris: [trackUri] }),
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization: `Bearer ${accessToken}`,
+                },
+                redirect: "follow",
+              }
+            ).then(async (response) => {
+              if (response.ok) {
+                console.log("✅ Track playback initiated successfully");
+                setIsPlaying(true);
+                setError(null);
+              } else {
+                // Try to read the error body, but don't fail if we can't
+                const errorData: { error?: { message?: string } } = {};
+                try {
+                  const jsonData = await response.json();
+                  if (jsonData && typeof jsonData === "object") {
+                    Object.assign(errorData, jsonData);
+                  }
+                } catch (e) {
+                  console.error("❌ Could not parse error response:", e);
+                }
 
-          if (response.ok) {
-            console.log("✅ Track playback initiated successfully");
-            setIsPlaying(true);
-            setError(null);
-          } else {
-            const errorData = await response.json().catch(() => ({}));
-            console.error(
-              "❌ Error playing track:",
-              response.status,
-              errorData
-            );
+                console.error(
+                  "❌ Error playing track:",
+                  response.status,
+                  errorData
+                );
 
-            if (response.status === 404) {
-              setError("Player not found. Try refreshing the page.");
-            } else if (response.status === 403) {
-              setError("Premium account required for playback.");
-            } else {
-              setError(
-                `Failed to play track: ${
-                  errorData.error?.message || response.statusText
-                }`
-              );
-            }
+                if (response.status === 404) {
+                  setError("Player not found. Try refreshing the page.");
+                } else if (response.status === 403) {
+                  setError("Premium account required for playback.");
+                } else {
+                  const errorMessage =
+                    errorData?.error?.message ||
+                    response.statusText ||
+                    "Unknown error";
+                  setError(`Failed to play track: ${errorMessage}`);
+                }
+              }
+            });
+          } catch (err) {
+            console.error("❌ Error playing track via API:", err);
+            setError("Failed to play track. Please try again.");
           }
         } catch (err) {
           console.error("❌ Error playing track:", err);
@@ -577,9 +647,20 @@ declare global {
   }
 }
 
-// Type declarations for Spotify Web Playback SDK
-// Using module declaration instead of namespace for better TS compatibility
-declare namespace Spotify {
+// Type declarations for Spotify SDK
+declare global {
+  // Using interface in a module context to avoid namespace linter error
+  interface Spotify {
+    Player: {
+      prototype: Player;
+      new (options: {
+        name: string;
+        getOAuthToken: (callback: (token: string) => void) => void;
+        volume: number;
+      }): Player;
+    };
+  }
+
   interface Player {
     connect(): Promise<boolean>;
     disconnect(): void;
