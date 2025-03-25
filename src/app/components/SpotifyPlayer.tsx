@@ -107,11 +107,21 @@ export default function SpotifyPlayer({
   const [currentTrack, setCurrentTrack] = useState<SpotifyTrack | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [sdkLoaded, setSdkLoaded] = useState(false);
+  const [useFallback, setUseFallback] = useState(false);
   const playerInitialized = useRef(false);
   const initializationAttempts = useRef(0);
   const uniqueComponentId = useRef(
     `spotify-player-${Math.random().toString(36).substring(2, 9)}`
   );
+
+  // Get track ID from URI for embed fallback
+  const getTrackIdFromUri = (uri: string) => {
+    if (!uri) return null;
+    const parts = uri.split(":");
+    return parts.length === 3 && parts[1] === "track" ? parts[2] : null;
+  };
+
+  const trackId = getTrackIdFromUri(trackUri);
 
   // Add debug log helper that includes component ID
   const debugLog = (message: string, data?: unknown) => {
@@ -132,6 +142,7 @@ export default function SpotifyPlayer({
           debugLog(
             "⚠️ Warning: Access token does not appear to be a valid JWT"
           );
+          setUseFallback(true);
         } else {
           debugLog("✅ Access token has valid JWT structure");
         }
@@ -145,11 +156,26 @@ export default function SpotifyPlayer({
         );
       } catch (err) {
         debugLog("⚠️ Error inspecting token", err);
+        setUseFallback(true);
       }
     } else {
       debugLog("⚠️ No access token provided");
+      setUseFallback(true);
     }
   }, [accessToken]);
+
+  // Switch to fallback on errors
+  useEffect(() => {
+    const fallbackTimeout = setTimeout(() => {
+      // If we haven't initialized the player after 5 seconds, switch to fallback
+      if (!isReady && !error) {
+        debugLog("⚠️ Switching to fallback player due to timeout");
+        setUseFallback(true);
+      }
+    }, 5000);
+
+    return () => clearTimeout(fallbackTimeout);
+  }, [isReady, error]);
 
   // Load Spotify Web Playback SDK script
   useEffect(() => {
@@ -826,19 +852,77 @@ export default function SpotifyPlayer({
     setIsReady(false);
   };
 
+  // Fallback player for when SDK initialization fails
+  const renderFallbackPlayer = () => {
+    if (!trackId) {
+      return (
+        <div className="alert alert-error">
+          <span>Invalid track URI format. Cannot play this track.</span>
+        </div>
+      );
+    }
+
+    debugLog("🔄 Using fallback Spotify Embed player for track ID:", trackId);
+
+    return (
+      <div className="spotify-embed">
+        <iframe
+          src={`https://open.spotify.com/embed/track/${trackId}?utm_source=generator&theme=0`}
+          width="100%"
+          height="152"
+          frameBorder="0"
+          allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+          loading="lazy"
+          onLoad={() => {
+            debugLog("✅ Spotify embed iframe loaded");
+            if (onPlayerReady) onPlayerReady();
+          }}
+          onError={() => {
+            debugLog("❌ Spotify embed iframe error");
+            if (onPlayerError)
+              onPlayerError(new Error("Embed player failed to load"));
+          }}
+        ></iframe>
+        <div className="text-right mt-2">
+          <button
+            onClick={() => {
+              debugLog("🔄 User clicked next in fallback player");
+              if (onTrackEnd) onTrackEnd();
+            }}
+            className="btn btn-sm btn-outline"
+          >
+            Try Another Song
+          </button>
+        </div>
+      </div>
+    );
+  };
+
+  if (useFallback) {
+    return renderFallbackPlayer();
+  }
+
   if (error) {
     return (
       <div className="flex flex-col gap-4">
         <div className="alert alert-error">
           <span>{error}</span>
         </div>
-        <button
-          onClick={retryInitialization}
-          className="btn btn-outline btn-sm"
-        >
-          <FontAwesomeIcon icon={faRotateRight} className="mr-2" />
-          Retry
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={retryInitialization}
+            className="btn btn-outline btn-sm"
+          >
+            <FontAwesomeIcon icon={faRotateRight} className="mr-2" />
+            Retry
+          </button>
+          <button
+            onClick={() => setUseFallback(true)}
+            className="btn btn-primary btn-sm"
+          >
+            Use Fallback Player
+          </button>
+        </div>
       </div>
     );
   }
