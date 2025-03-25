@@ -48,7 +48,7 @@ export default async function Dashboard() {
           </div>
         )}
 
-        <div className="card bg-base-200 shadow-md w-full max-w-xl mb-8">
+        <div className="card bg-base-200 shadow w-full mb-8">
           <div className="card-body">
             <h2 className="card-title">Find a cure for your earworm</h2>
             <p>

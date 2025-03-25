@@ -68,7 +68,7 @@ export default function SearchPage() {
 
   return (
     <div className="hero min-h-screen">
-      <div className="hero-content flex-col w-full max-w-4xl">
+      <div className="hero-content flex-col w-full">
         <div className="avatar">
           <div className="w-24 mb-6">
             <Mascot
@@ -105,7 +105,7 @@ export default function SearchPage() {
         </form>
 
         {error && (
-          <div className="alert alert-error mb-4 w-full max-w-md">
+          <div className="alert alert-error mb-4 w-full">
             <p>{error}</p>
           </div>
         )}
@@ -113,10 +113,7 @@ export default function SearchPage() {
         {results.length > 0 ? (
           <div className="w-full space-y-4">
             {results.map((track) => (
-              <div
-                key={track.id}
-                className="card card-side bg-base-200 shadow-md"
-              >
+              <div key={track.id} className="card card-side bg-base-200 shadow">
                 <figure className="m-2">
                   {track.album.images &&
                     track.album.images.length > 0 &&

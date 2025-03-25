@@ -21,7 +21,7 @@ export default function AuthError() {
   return (
     <div className="hero min-h-screen">
       <div className="hero-content text-center">
-        <div className="max-w-md">
+        <div>
           <div className="avatar">
             <div className="w-32 mb-6 mx-auto">
               <Mascot mood="sad" width={150} height={150} />

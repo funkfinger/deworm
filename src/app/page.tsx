@@ -8,7 +8,7 @@ export default async function Home() {
   return (
     <div className="hero min-h-screen">
       <div className="hero-content text-center">
-        <div className="max-w-md">
+        <div>
           <div className="avatar">
             <div className="w-48 mb-6 mx-auto">
               <Mascot mood="happy" width={200} height={200} priority />
