@@ -32,6 +32,7 @@ interface SpotifySDKPlayer {
   pause(): Promise<void>;
   resume(): Promise<void>;
   seek(position_ms: number): Promise<void>;
+  activateElement(): void;
   addListener(
     event: string,
     callback: (event: Record<string, unknown>) => void
@@ -67,6 +68,18 @@ declare global {
   }
 }
 
+// Device state persistence key
+const DEVICE_STATE_KEY = "spotify_device_state";
+
+// Add Spotify device interface
+interface SpotifyDevice {
+  id: string;
+  is_active: boolean;
+  name: string;
+  type: string;
+  volume_percent: number;
+}
+
 export default function SpotifyPlayer({
   accessToken,
   trackUri,
@@ -83,15 +96,52 @@ export default function SpotifyPlayer({
   const [currentTrack, setCurrentTrack] = useState<SpotifyTrack | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [sdkLoaded, setSdkLoaded] = useState(false);
+  const [isReconnecting, setIsReconnecting] = useState(false);
   const playerInitialized = useRef(false);
   const initializationAttempts = useRef(0);
+  const reconnectAttempts = useRef(0);
   const instanceId = useRef(`player-${Math.random().toString(36).slice(2, 9)}`);
+  const reconnectTimeout = useRef<NodeJS.Timeout | null>(null);
 
   // Debug logger that includes component instance ID
   const log = (message: string, data?: unknown) => {
     const prefix = `[SpotifyPlayer:${instanceId.current}]`;
     console.log(`${prefix} ${message}`, data === undefined ? "" : data);
   };
+
+  // Load persisted device state
+  useEffect(() => {
+    try {
+      const persistedState = localStorage.getItem(DEVICE_STATE_KEY);
+      if (persistedState) {
+        const { deviceId: savedDeviceId, volume: savedVolume } =
+          JSON.parse(persistedState);
+        if (savedDeviceId) {
+          setDeviceId(savedDeviceId);
+          log("Loaded persisted device ID:", savedDeviceId);
+        }
+        if (typeof savedVolume === "number") {
+          setVolume(savedVolume);
+        }
+      }
+    } catch (err) {
+      log("Error loading persisted device state:", err);
+    }
+  }, []);
+
+  // Save device state when it changes
+  useEffect(() => {
+    if (deviceId) {
+      try {
+        localStorage.setItem(
+          DEVICE_STATE_KEY,
+          JSON.stringify({ deviceId, volume })
+        );
+      } catch (err) {
+        log("Error saving device state:", err);
+      }
+    }
+  }, [deviceId, volume]);
 
   // Check if Spotify SDK script is already loaded
   useEffect(() => {
@@ -129,6 +179,81 @@ export default function SpotifyPlayer({
     };
   }, []);
 
+  // Verify device state with Spotify API
+  const verifyDeviceState = async () => {
+    if (!deviceId || !accessToken) return false;
+
+    try {
+      const response = await fetch(
+        `https://api.spotify.com/v1/me/player/devices`,
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        log("Failed to verify device state:", response.status);
+        return false;
+      }
+
+      const data = await response.json();
+      const devices = data.devices || [];
+      return devices.some((device: SpotifyDevice) => device.id === deviceId);
+    } catch (err) {
+      log("Error verifying device state:", err);
+      return false;
+    }
+  };
+
+  // Handle reconnection
+  const handleReconnection = async () => {
+    if (isReconnecting || reconnectAttempts.current >= 3) {
+      log("Max reconnection attempts reached");
+      setError("Failed to reconnect to Spotify. Please refresh the page.");
+      return;
+    }
+
+    setIsReconnecting(true);
+    reconnectAttempts.current += 1;
+
+    log(`Attempting reconnection (attempt ${reconnectAttempts.current})`);
+
+    // Clear any existing reconnect timeout
+    if (reconnectTimeout.current) {
+      clearTimeout(reconnectTimeout.current);
+    }
+
+    // Verify device state
+    const isDeviceValid = await verifyDeviceState();
+    if (!isDeviceValid) {
+      log("Device state invalid, clearing persisted state");
+      localStorage.removeItem(DEVICE_STATE_KEY);
+      setDeviceId("");
+      setIsReady(false);
+      playerInitialized.current = false;
+      setIsReconnecting(false);
+      return;
+    }
+
+    // Try to reconnect
+    if (player) {
+      try {
+        await player.connect();
+        log("Reconnected successfully");
+        setIsReconnecting(false);
+        reconnectAttempts.current = 0;
+      } catch (err) {
+        log("Reconnection failed:", err);
+        // Schedule another reconnection attempt
+        reconnectTimeout.current = setTimeout(handleReconnection, 2000);
+      }
+    } else {
+      setIsReconnecting(false);
+    }
+  };
+
   // Initialize Spotify Player when SDK is loaded
   useEffect(() => {
     if (!sdkLoaded || !accessToken) {
@@ -152,298 +277,280 @@ export default function SpotifyPlayer({
       return;
     }
 
-    // Add a short delay before initializing player to ensure SDK is fully ready
-    const initTimer = setTimeout(() => {
-      const initializePlayer = () => {
-        try {
-          log("Initializing Spotify player with token");
+    const initializePlayer = () => {
+      try {
+        log("Initializing Spotify player with token");
 
-          // Check if Spotify SDK is available
-          if (!window.Spotify) {
-            log("Spotify SDK not available yet");
-            setError(
-              "Spotify player couldn't be initialized. Please refresh the page."
-            );
-            playerInitialized.current = false;
-            return null;
+        // Check if Spotify SDK is available
+        if (!window.Spotify) {
+          log("Spotify SDK not available yet");
+          setError(
+            "Spotify player couldn't be initialized. Please refresh the page."
+          );
+          playerInitialized.current = false;
+          return null;
+        }
+
+        const newPlayer = new window.Spotify.Player({
+          name: "Deworm Web Player",
+          getOAuthToken: (callback) => {
+            log("Providing OAuth token to player");
+            callback(accessToken);
+          },
+          volume: volume,
+        });
+
+        // Error handling
+        newPlayer.addListener(
+          "initialization_error",
+          (event: Record<string, unknown>) => {
+            const message =
+              typeof event["message"] === "string"
+                ? event["message"]
+                : "Unknown initialization error";
+            log("Initialization error:", message);
+            setError(`Player initialization failed: ${message}`);
+            if (onPlayerError) onPlayerError(new Error(message));
           }
+        );
 
-          const newPlayer = new window.Spotify.Player({
-            name: "Deworm Web Player",
-            getOAuthToken: (callback) => {
-              log("Providing OAuth token to player");
-              callback(accessToken);
-            },
-            volume: volume,
-          });
+        newPlayer.addListener(
+          "authentication_error",
+          (event: Record<string, unknown>) => {
+            const message =
+              typeof event["message"] === "string"
+                ? event["message"]
+                : "Unknown authentication error";
+            log("Authentication error:", message);
+            setError(`Authentication failed: ${message}`);
 
-          // Error handling
-          newPlayer.addListener(
-            "initialization_error",
-            (event: Record<string, unknown>) => {
-              const message =
-                typeof event["message"] === "string"
-                  ? event["message"]
-                  : "Unknown initialization error";
-              log("Initialization error:", message);
-              setError(`Player initialization failed: ${message}`);
-              if (onPlayerError) onPlayerError(new Error(message));
+            // Only redirect if the error clearly indicates a need to re-authenticate
+            if (
+              message.toLowerCase().includes("token") ||
+              message.toLowerCase().includes("expired") ||
+              message.toLowerCase().includes("invalid")
+            ) {
+              window.location.href = "/api/auth/login";
             }
-          );
 
-          newPlayer.addListener(
-            "authentication_error",
-            (event: Record<string, unknown>) => {
-              const message =
-                typeof event["message"] === "string"
-                  ? event["message"]
-                  : "Unknown authentication error";
-              log("Authentication error:", message);
-              setError(`Authentication failed: ${message}`);
+            if (onPlayerError) onPlayerError(new Error(message));
+          }
+        );
 
-              // Only redirect if the error clearly indicates a need to re-authenticate
-              if (
-                message.toLowerCase().includes("token") ||
-                message.toLowerCase().includes("expired") ||
-                message.toLowerCase().includes("invalid")
-              ) {
-                window.location.href = "/api/auth/login";
-              }
+        newPlayer.addListener(
+          "account_error",
+          (event: Record<string, unknown>) => {
+            const message =
+              typeof event["message"] === "string"
+                ? event["message"]
+                : "Unknown account error";
+            log("Account error:", message);
+            setError(`Account error: ${message}`);
+            if (onPlayerError) onPlayerError(new Error(message));
+          }
+        );
 
-              if (onPlayerError) onPlayerError(new Error(message));
+        newPlayer.addListener(
+          "playback_error",
+          (event: Record<string, unknown>) => {
+            const message =
+              typeof event["message"] === "string"
+                ? event["message"]
+                : "Unknown playback error";
+            log("Playback error:", message);
+            setError(`Playback error: ${message}`);
+            if (onPlayerError) onPlayerError(new Error(message));
+
+            // Try another track on playback errors
+            if (onTrackEnd) {
+              setTimeout(() => onTrackEnd(), 500);
             }
-          );
+          }
+        );
 
-          newPlayer.addListener(
-            "account_error",
-            (event: Record<string, unknown>) => {
-              const message =
-                typeof event["message"] === "string"
-                  ? event["message"]
-                  : "Unknown account error";
-              log("Account error:", message);
-              setError(`Account error: ${message}`);
-              if (onPlayerError) onPlayerError(new Error(message));
-            }
-          );
-
-          newPlayer.addListener(
-            "playback_error",
-            (event: Record<string, unknown>) => {
-              const message =
-                typeof event["message"] === "string"
-                  ? event["message"]
-                  : "Unknown playback error";
-              log("Playback error:", message);
-              setError(`Playback error: ${message}`);
-              if (onPlayerError) onPlayerError(new Error(message));
-
-              // Try another track on playback errors
-              if (onTrackEnd) {
-                setTimeout(() => onTrackEnd(), 500);
-              }
-            }
-          );
-
-          // Playback status updates
-          newPlayer.addListener(
-            "player_state_changed",
-            (state: Record<string, unknown>) => {
-              if (!state) {
-                log("Player state changed but state is null");
-                return;
-              }
-
-              // Safely access properties with type checks
-              const isPaused =
-                typeof state["paused"] === "boolean" ? state["paused"] : true;
-              const position =
-                typeof state["position"] === "number" ? state["position"] : 0;
-
-              // Safely handle track_window and current_track
-              const trackWindow = state["track_window"] as
-                | Record<string, unknown>
-                | undefined;
-              const currentTrackData = trackWindow?.["current_track"] as
-                | Record<string, unknown>
-                | undefined;
-
-              if (currentTrackData) {
-                const trackName =
-                  typeof currentTrackData["name"] === "string"
-                    ? currentTrackData["name"]
-                    : "unknown";
-
-                log("Player state changed:", {
-                  paused: isPaused,
-                  position,
-                  track: trackName,
-                });
-
-                // Only use the track data if we have all required fields
-                if (
-                  typeof currentTrackData["id"] === "string" &&
-                  typeof currentTrackData["name"] === "string" &&
-                  typeof currentTrackData["uri"] === "string"
-                ) {
-                  try {
-                    // Extract album info safely
-                    const album = currentTrackData["album"] as
-                      | Record<string, unknown>
-                      | undefined;
-                    const albumName =
-                      typeof album?.["name"] === "string"
-                        ? (album["name"] as string)
-                        : "Unknown Album";
-
-                    // Extract album images safely
-                    let albumImages:
-                      | { url: string; height: number; width: number }[]
-                      | undefined = undefined;
-                    if (
-                      album &&
-                      Array.isArray(album["images"]) &&
-                      album["images"].length > 0
-                    ) {
-                      albumImages = album["images"] as {
-                        url: string;
-                        height: number;
-                        width: number;
-                      }[];
-                    }
-
-                    // Cast to SpotifyTrack with validation
-                    const track: SpotifyTrack = {
-                      id: currentTrackData["id"] as string,
-                      name: currentTrackData["name"] as string,
-                      uri: currentTrackData["uri"] as string,
-                      album: {
-                        name: albumName,
-                        images: albumImages,
-                      },
-                      artists: Array.isArray(currentTrackData["artists"])
-                        ? (currentTrackData["artists"] as { name: string }[])
-                        : [],
-                      duration_ms:
-                        typeof currentTrackData["duration_ms"] === "number"
-                          ? (currentTrackData["duration_ms"] as number)
-                          : 0,
-                    };
-
-                    setCurrentTrack(track);
-                  } catch (err) {
-                    log("Error parsing track data:", err);
-                  }
-                }
-              }
-
-              // Update playing state
-              setIsPlaying(!isPaused);
-
-              // Handle track end
-              if (isPaused && position === 0 && onTrackEnd) {
-                log("Track ended, triggering onTrackEnd");
-                onTrackEnd();
-              }
-            }
-          );
-
-          // Ready
-          newPlayer.addListener("ready", (event: Record<string, unknown>) => {
-            const deviceId =
-              typeof event["device_id"] === "string" ? event["device_id"] : "";
-            if (!deviceId) {
-              log("Ready event missing device ID");
+        // Playback status updates
+        newPlayer.addListener(
+          "player_state_changed",
+          (state: Record<string, unknown>) => {
+            if (!state) {
+              log("Player state changed but state is null");
               return;
             }
 
-            log("Player ready with Device ID:", deviceId);
-            setDeviceId(deviceId);
-            setIsReady(true);
+            // Safely access properties with type checks
+            const isPaused =
+              typeof state["paused"] === "boolean" ? state["paused"] : true;
+            const position =
+              typeof state["position"] === "number" ? state["position"] : 0;
 
-            if (onPlayerReady) {
-              onPlayerReady();
+            // Safely handle track_window and current_track
+            const trackWindow = state["track_window"] as
+              | Record<string, unknown>
+              | undefined;
+            const currentTrackData = trackWindow?.["current_track"] as
+              | Record<string, unknown>
+              | undefined;
+
+            if (currentTrackData) {
+              const trackName =
+                typeof currentTrackData["name"] === "string"
+                  ? currentTrackData["name"]
+                  : "unknown";
+
+              log("Player state changed:", {
+                paused: isPaused,
+                position,
+                track: trackName,
+              });
+
+              // Only use the track data if we have all required fields
+              if (
+                typeof currentTrackData["id"] === "string" &&
+                typeof currentTrackData["name"] === "string" &&
+                typeof currentTrackData["uri"] === "string"
+              ) {
+                try {
+                  // Extract album info safely
+                  const album = currentTrackData["album"] as
+                    | Record<string, unknown>
+                    | undefined;
+                  const albumName =
+                    typeof album?.["name"] === "string"
+                      ? album["name"]
+                      : "Unknown Album";
+
+                  // Extract album images safely
+                  let albumImages:
+                    | { url: string; height: number; width: number }[]
+                    | undefined = undefined;
+                  if (
+                    album &&
+                    Array.isArray(album["images"]) &&
+                    album["images"].length > 0
+                  ) {
+                    albumImages = album["images"] as {
+                      url: string;
+                      height: number;
+                      width: number;
+                    }[];
+                  }
+
+                  // Cast to SpotifyTrack with validation
+                  const track: SpotifyTrack = {
+                    id: currentTrackData["id"],
+                    name: currentTrackData["name"],
+                    uri: currentTrackData["uri"],
+                    album: {
+                      name: albumName,
+                      images: albumImages,
+                    },
+                    artists: Array.isArray(currentTrackData["artists"])
+                      ? (currentTrackData["artists"] as { name: string }[])
+                      : [],
+                    duration_ms:
+                      typeof currentTrackData["duration_ms"] === "number"
+                        ? currentTrackData["duration_ms"]
+                        : 0,
+                  };
+
+                  setCurrentTrack(track);
+                } catch (err) {
+                  log("Error parsing track data:", err);
+                }
+              }
             }
+
+            // Update playing state
+            setIsPlaying(!isPaused);
+
+            // Handle track end
+            if (isPaused && position === 0 && onTrackEnd) {
+              log("Track ended, triggering onTrackEnd");
+              onTrackEnd();
+            }
+          }
+        );
+
+        // Ready
+        newPlayer.addListener("ready", (event: Record<string, unknown>) => {
+          const deviceId =
+            typeof event["device_id"] === "string" ? event["device_id"] : null;
+          if (!deviceId) {
+            log("Ready event missing device ID");
+            return;
+          }
+
+          log("Player ready with Device ID:", deviceId);
+          setDeviceId(deviceId);
+          setIsReady(true);
+
+          // Activate the player for mobile support
+          newPlayer.activateElement();
+
+          if (onPlayerReady) {
+            onPlayerReady();
+          }
+        });
+
+        // Not Ready
+        newPlayer.addListener("not_ready", ({ device_id }) => {
+          log("Device ID has gone offline:", device_id);
+          setIsReady(false);
+          handleReconnection();
+        });
+
+        // Connect to the player
+        log("Connecting to Spotify player...");
+        newPlayer
+          .connect()
+          .then((success) => {
+            if (success) {
+              log("Player connected successfully");
+              setPlayer(newPlayer);
+              reconnectAttempts.current = 0;
+            } else {
+              log("Player failed to connect");
+              setError("Failed to connect to Spotify. Please try again.");
+            }
+          })
+          .catch((err) => {
+            log("Error connecting to player:", err);
+            setError(
+              "Error connecting to Spotify player. Please refresh the page."
+            );
           });
 
-          // Not Ready
-          newPlayer.addListener(
-            "not_ready",
-            (event: Record<string, unknown>) => {
-              const deviceId =
-                typeof event["device_id"] === "string"
-                  ? event["device_id"]
-                  : "unknown";
-              log("Device ID has gone offline:", deviceId);
-              setIsReady(false);
-            }
-          );
+        return newPlayer;
+      } catch (error) {
+        log("Error initializing player:", error);
+        setError(
+          "Failed to initialize Spotify player. Please refresh the page."
+        );
+        return null;
+      }
+    };
 
-          // Connect to the player
-          log("Connecting to Spotify player...");
-          newPlayer
-            .connect()
-            .then((success: boolean) => {
-              if (success) {
-                log("Player connected successfully");
-                setPlayer(newPlayer);
-              } else {
-                log("Player failed to connect");
-                setError("Failed to connect to Spotify. Please try again.");
-              }
-            })
-            .catch((err: Error) => {
-              log("Error connecting to player:", err);
-              setError(
-                "Error connecting to Spotify player. Please refresh the page."
-              );
-            });
-
-          return newPlayer;
-        } catch (error) {
-          log("Error initializing player:", error);
-          setError(
-            "Failed to initialize Spotify player. Please refresh the page."
-          );
-          return null;
+    // Set up the SDK ready callback
+    if (window.Spotify) {
+      log("Window.Spotify is available, initializing player");
+      const newPlayer = initializePlayer();
+      if (!newPlayer) {
+        log("Player initialization failed");
+        playerInitialized.current = false;
+      }
+    } else {
+      log("Setting up onSpotifyWebPlaybackSDKReady callback");
+      window.onSpotifyWebPlaybackSDKReady = () => {
+        log("Spotify Web Playback SDK is ready");
+        const newPlayer = initializePlayer();
+        if (newPlayer) {
+          setPlayer(newPlayer);
         }
       };
-
-      try {
-        // Initialize player when SDK is ready
-        if (window.Spotify) {
-          log("Window.Spotify is available, initializing player");
-          const newPlayer = initializePlayer();
-
-          // Check if player was created successfully
-          if (!newPlayer) {
-            log("Player initialization failed");
-            playerInitialized.current = false; // Allow retry
-          }
-        } else {
-          // Set up event listener for when SDK becomes ready
-          log("Setting up onSpotifyWebPlaybackSDKReady callback");
-          const spotifyCallback = () => {
-            log("Spotify Web Playback SDK is ready");
-            const newPlayer = initializePlayer();
-            if (newPlayer) {
-              setPlayer(newPlayer);
-            }
-          };
-
-          window.onSpotifyWebPlaybackSDKReady = spotifyCallback;
-        }
-      } catch (err) {
-        log("Unexpected error during player setup:", err);
-        setError("An unexpected error occurred. Please refresh the page.");
-        playerInitialized.current = false; // Allow retry
-      }
-    }, 500); // Short delay before initializing
+    }
 
     // Return cleanup function
     return () => {
-      clearTimeout(initTimer);
-
       if (player) {
         log("Disconnecting player on cleanup");
         try {
@@ -476,7 +583,7 @@ export default function SpotifyPlayer({
   useEffect(() => {
     let playTimer: NodeJS.Timeout | null = null;
 
-    if (!deviceId || !trackUri || !isReady) {
+    if (!deviceId || !trackUri || !isReady || !player) {
       log("Not ready to play:", {
         hasDeviceId: !!deviceId,
         hasTrackUri: !!trackUri,
@@ -512,8 +619,27 @@ export default function SpotifyPlayer({
             return;
           }
 
+          // Verify device state before attempting playback
+          const isDeviceValid = await verifyDeviceState();
+          if (!isDeviceValid) {
+            log("Device state invalid, attempting reconnection");
+            handleReconnection();
+            return;
+          }
+
+          // Use the Web Playback SDK's native playback method
           try {
-            const playResponse = await fetch(
+            // First ensure we're connected
+            const connected = await player.connect();
+            if (!connected) {
+              throw new Error("Failed to connect to Spotify player");
+            }
+
+            // Set the volume before playing
+            await player.setVolume(volume);
+
+            // Load the track first
+            const loadResponse = await fetch(
               `https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`,
               {
                 method: "PUT",
@@ -522,79 +648,24 @@ export default function SpotifyPlayer({
                   "Content-Type": "application/json",
                   Authorization: `Bearer ${accessToken}`,
                 },
-                redirect: "follow",
               }
             );
 
-            if (playResponse.ok) {
-              log("Track playback initiated successfully");
-              setIsPlaying(true);
-              setError(null);
-            } else {
-              // Handle specific status codes
-              if (playResponse.status === 401) {
-                log("Authentication token expired or invalid");
-                setError(
-                  "Your Spotify session has expired. Please log in again."
-                );
-                return;
-              }
-
-              // Try to read error response
-              let errorMessage = playResponse.statusText || "Unknown error";
-
-              try {
-                const contentType = playResponse.headers.get("content-type");
-                if (contentType && contentType.includes("application/json")) {
-                  const errorData = await playResponse.json();
-                  if (errorData && errorData.error && errorData.error.message) {
-                    errorMessage = errorData.error.message;
-
-                    // Check for premium account requirement
-                    if (errorMessage.includes("premium")) {
-                      setError(
-                        "Spotify Premium account required for playback."
-                      );
-                    } else {
-                      setError(`Failed to play track: ${errorMessage}`);
-                    }
-
-                    if (onPlayerError) {
-                      onPlayerError(new Error(errorMessage));
-                    }
-
-                    // Try next track on any error
-                    if (onTrackEnd) {
-                      setTimeout(() => onTrackEnd(), 500);
-                    }
-                    return;
-                  }
-                }
-              } catch {
-                log("Could not parse error response");
-              }
-
-              // Generic error handling
-              setError(`Failed to play track: ${errorMessage}`);
-
-              if (onPlayerError) {
-                onPlayerError(new Error(errorMessage));
-              }
-
-              // Try next track on any error
-              if (onTrackEnd) {
-                setTimeout(() => onTrackEnd(), 500);
-              }
+            if (!loadResponse.ok) {
+              throw new Error("Failed to load track");
             }
-          } catch (apiError) {
-            log("Network error playing track:", apiError);
-            setError("Network error playing track. Please try again.");
 
+            // Start playback
+            await player.togglePlay();
+            setIsPlaying(true);
+            setError(null);
+            log("Track playback initiated successfully");
+          } catch (playbackError) {
+            log("Error during playback:", playbackError);
+            setError("Failed to play track. Please try again.");
             if (onPlayerError) {
-              onPlayerError(new Error("Network error playing track"));
+              onPlayerError(new Error("Failed to play track"));
             }
-
-            // Try next track
             if (onTrackEnd) {
               setTimeout(() => onTrackEnd(), 500);
             }
@@ -602,11 +673,9 @@ export default function SpotifyPlayer({
         } catch (err) {
           log("Error playing track:", err);
           setError("Failed to play track. Please try again.");
-
           if (onPlayerError) {
             onPlayerError(new Error("Failed to play track"));
           }
-
           if (onTrackEnd) {
             setTimeout(() => onTrackEnd(), 500);
           }
@@ -627,6 +696,7 @@ export default function SpotifyPlayer({
     player,
     onPlayerError,
     onTrackEnd,
+    volume,
   ]);
 
   // Toggle play/pause
@@ -722,7 +792,11 @@ export default function SpotifyPlayer({
           </div>
           <div className="text-center mt-4">
             <span className="loading loading-spinner loading-sm mr-2"></span>
-            <span className="text-sm opacity-75">Connecting to Spotify...</span>
+            <span className="text-sm opacity-75">
+              {isReconnecting
+                ? "Reconnecting to Spotify..."
+                : "Connecting to Spotify..."}
+            </span>
           </div>
         </div>
       </div>
