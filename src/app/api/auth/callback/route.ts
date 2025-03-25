@@ -61,8 +61,44 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     // Save user profile to cookies
     await saveUserProfile(userProfile);
 
-    // Successfully authenticated, redirect to dashboard or home
-    return NextResponse.redirect(new URL("/dashboard", request.url));
+    // Create a response that redirects to search page (formerly dashboard)
+    const response = NextResponse.redirect(new URL("/search", request.url));
+
+    // Set client-side accessible cookies for token persistence
+    const expiryTime = new Date().getTime() + tokenData.expires_in * 1000;
+
+    // Set cookies that are accessible to JavaScript
+    response.cookies.set("spotify_access_token", tokenData.access_token, {
+      path: "/",
+      maxAge: tokenData.expires_in,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+    });
+
+    response.cookies.set("spotify_token_expiry", expiryTime.toString(), {
+      path: "/",
+      maxAge: tokenData.expires_in,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+    });
+
+    if (tokenData.refresh_token) {
+      response.cookies.set("spotify_refresh_token", tokenData.refresh_token, {
+        path: "/",
+        maxAge: 30 * 24 * 60 * 60, // 30 days
+        sameSite: "lax",
+        secure: process.env.NODE_ENV === "production",
+      });
+    }
+
+    response.cookies.set("spotify_user", JSON.stringify(userProfile), {
+      path: "/",
+      maxAge: tokenData.expires_in,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+    });
+
+    return response;
   } catch (error) {
     console.error("Error during Spotify authentication:", error);
     return NextResponse.redirect(

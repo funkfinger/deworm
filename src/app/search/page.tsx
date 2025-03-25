@@ -5,7 +5,12 @@ import Link from "next/link";
 import Mascot from "@/app/components/Mascot";
 import SearchAutocomplete from "@/app/components/SearchAutocomplete";
 import SpotifyPlayer from "@/app/components/SpotifyPlayer";
-import { getAccessToken, isAuthenticated } from "@/app/lib/client-session";
+import {
+  getAccessToken,
+  isAuthenticated,
+  getUserProfile,
+} from "@/app/lib/client-session";
+import type { SpotifyUser } from "@/app/lib/spotify";
 
 // Types for Spotify API responses
 type SpotifyImage = {
@@ -41,6 +46,7 @@ export default function SearchPage() {
   const [earwormTrack, setEarwormTrack] = useState<SpotifyTrack | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthChecked, setIsAuthChecked] = useState(false);
+  const [userProfile, setUserProfile] = useState<SpotifyUser | null>(null);
 
   // Load access token when component mounts
   useEffect(() => {
@@ -49,6 +55,8 @@ export default function SearchPage() {
       try {
         // Check authentication first
         const isLoggedIn = isAuthenticated();
+        console.log("Is logged in:", isLoggedIn);
+
         if (!isLoggedIn) {
           setIsAuthChecked(true);
           setIsLoading(false);
@@ -59,6 +67,13 @@ export default function SearchPage() {
         const token = getAccessToken();
         if (token) {
           setAccessToken(token);
+          console.log("Token loaded successfully");
+
+          // Also get user profile
+          const profile = getUserProfile();
+          if (profile) {
+            setUserProfile(profile);
+          }
         }
       } catch (err) {
         console.error("Error loading access token:", err);
@@ -143,8 +158,31 @@ export default function SearchPage() {
   return (
     <main className="container mx-auto px-4 py-8">
       <div className="text-center mb-8">
-        <h1 className="text-3xl font-bold mb-2">Find Your Earworm</h1>
-        <p className="opacity-75">
+        <div className="flex flex-col items-center justify-center mb-4">
+          <Mascot mood="happy" width={100} height={100} />
+          <h1 className="text-3xl font-bold mt-2">Welcome to DeWorm</h1>
+
+          {/* Display user info if available */}
+          {userProfile && (
+            <div className="flex items-center mt-4 mb-2">
+              {userProfile.images &&
+                userProfile.images.length > 0 &&
+                userProfile.images[0]?.url && (
+                  <div className="avatar mr-2">
+                    <div className="w-8 h-8 rounded-full">
+                      <img
+                        src={userProfile.images[0].url}
+                        alt={userProfile.display_name || "User"}
+                      />
+                    </div>
+                  </div>
+                )}
+              <span className="font-medium">{userProfile.display_name}</span>
+            </div>
+          )}
+        </div>
+
+        <p className="opacity-75 mt-2">
           Search for the song stuck in your head so we can help you replace it
         </p>
       </div>
@@ -295,10 +333,18 @@ export default function SearchPage() {
                   <li>Let us find you a replacement song</li>
                 </ol>
                 <div className="divider"></div>
-                <p className="text-sm opacity-75">
-                  Deworm helps you replace annoying earworms with songs
-                  you&apos;ll enjoy even more!
-                </p>
+                <div className="flex justify-between items-center">
+                  <p className="text-sm opacity-75">
+                    Deworm helps you replace annoying earworms with songs
+                    you&apos;ll enjoy even more!
+                  </p>
+                  <Link
+                    href="/api/auth/logout"
+                    className="btn btn-outline btn-sm"
+                  >
+                    Logout
+                  </Link>
+                </div>
               </div>
             </div>
           )}

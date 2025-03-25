@@ -8,7 +8,6 @@ import {
   faSignOutAlt,
   faHome,
   faSearch,
-  faUser,
 } from "@fortawesome/free-solid-svg-icons";
 import { isAuthenticated } from "@/app/lib/client-session";
 
@@ -43,26 +42,15 @@ export default function Header() {
                 </Link>
               </li>
               {isLoggedIn && (
-                <>
-                  <li>
-                    <Link
-                      href="/search"
-                      className={pathname === "/search" ? "active" : ""}
-                    >
-                      <FontAwesomeIcon icon={faSearch} />
-                      Search
-                    </Link>
-                  </li>
-                  <li>
-                    <Link
-                      href="/dashboard"
-                      className={pathname === "/dashboard" ? "active" : ""}
-                    >
-                      <FontAwesomeIcon icon={faUser} />
-                      Dashboard
-                    </Link>
-                  </li>
-                </>
+                <li>
+                  <Link
+                    href="/search"
+                    className={pathname === "/search" ? "active" : ""}
+                  >
+                    <FontAwesomeIcon icon={faSearch} />
+                    Dashboard
+                  </Link>
+                </li>
               )}
             </ul>
           </div>

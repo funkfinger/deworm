@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 // Routes that require authentication
-const PROTECTED_ROUTES = ["/dashboard", "/search", "/player"];
+const PROTECTED_ROUTES = ["/search", "/player", "/replacement"];
 
 // Routes that we should not redirect from if user is not authenticated
 const PUBLIC_ROUTES = [
@@ -23,6 +23,11 @@ const PUBLIC_ROUTES = [
 export function middleware(request: NextRequest) {
   // Get the pathname from the URL
   const pathname = request.nextUrl.pathname;
+
+  // Redirect dashboard to search (since we've merged them)
+  if (pathname === "/dashboard") {
+    return NextResponse.redirect(new URL("/search", request.url));
+  }
 
   // Allow public routes and API routes (they handle their own auth)
   if (

@@ -21,15 +21,22 @@ export default async function Home() {
             head. Login with Spotify to get started.
           </p>
 
-          {authenticated ? (
-            <Link href="/dashboard" className="btn btn-primary">
-              Go to Dashboard
-            </Link>
-          ) : (
-            <Link href="/api/auth/login" className="btn btn-primary">
-              Login with Spotify
-            </Link>
-          )}
+          <div className="mt-6 flex justify-center gap-4">
+            {authenticated ? (
+              <Link href="/search" className="btn btn-primary">
+                Go to Dashboard
+              </Link>
+            ) : (
+              <>
+                <Link href="/search" className="btn btn-primary">
+                  Get Started
+                </Link>
+                <Link href="/api/auth/login" className="btn btn-outline">
+                  Login with Spotify
+                </Link>
+              </>
+            )}
+          </div>
         </div>
       </div>
     </div>
