@@ -67,69 +67,72 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       refresh_token: tokenData.refresh_token ? "exists" : "missing",
     });
 
-    // Save tokens to cookies
+    // Calculate token expiry time
+    const expiryTime = new Date(Date.now() + tokenData.expires_in * 1000);
+    const maxAgeSeconds = tokenData.expires_in;
+
+    // Create document cookies directly that will be accessible to client JavaScript
+    const cookieOptions = `path=/; max-age=${maxAgeSeconds}; SameSite=Lax; ${
+      process.env.NODE_ENV === "production" ? "Secure" : ""
+    }`;
+
+    // Create a response with a script that sets the cookies via JavaScript
+    const redirectUrl = new URL("/search", request.url);
+    const htmlResponse = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="UTF-8">
+          <meta http-equiv="refresh" content="0;url=${redirectUrl}">
+          <title>Authentication Successful</title>
+        </head>
+        <body>
+          <p>Authentication successful! Redirecting...</p>
+          <script>
+            // Set cookies directly in the browser to ensure client-side access
+            document.cookie = "spotify_access_token=${
+              tokenData.access_token
+            }; ${cookieOptions}";
+            document.cookie = "spotify_token_expiry=${expiryTime.getTime()}; ${cookieOptions}";
+            ${
+              tokenData.refresh_token
+                ? `document.cookie = "spotify_refresh_token=${tokenData.refresh_token}; ${cookieOptions}";`
+                : ""
+            }
+            
+            // Fetch user profile and save it as a cookie too
+            fetch("https://api.spotify.com/v1/me", {
+              headers: {
+                "Authorization": "Bearer ${tokenData.access_token}"
+              }
+            })
+            .then(response => response.json())
+            .then(profile => {
+              document.cookie = "spotify_user=" + encodeURIComponent(JSON.stringify(profile)) + "; ${cookieOptions}";
+              window.location.href = "${redirectUrl}"; 
+            })
+            .catch(error => {
+              console.error("Error fetching user profile:", error);
+              window.location.href = "${redirectUrl}";
+            });
+          </script>
+        </body>
+      </html>
+    `;
+
+    // Also save tokens to HTTP-only cookies (for server-side authentication)
     await saveTokens(tokenData);
-    console.log("✅ Saved tokens to HTTP-only cookies");
 
-    // Get the user's profile information
-    console.log("🔄 Fetching user profile...");
+    console.log("🔄 Fetching user profile for server-side storage...");
     const userProfile = await getSpotifyUserProfile(tokenData.access_token);
-    console.log("✅ Received user profile", {
-      id: userProfile.id,
-      name: userProfile.display_name,
-    });
-
-    // Save user profile to cookies
     await saveUserProfile(userProfile);
-    console.log("✅ Saved user profile to HTTP-only cookies");
 
-    // Create a response that redirects to search page (formerly dashboard)
-    const response = NextResponse.redirect(new URL("/search", request.url));
-    console.log("🔄 Creating redirect response to /search");
-
-    // Set client-side accessible cookies for token persistence
-    const expiryTime = new Date().getTime() + tokenData.expires_in * 1000;
-
-    // Set cookies that are accessible to JavaScript - essential for client components
-    console.log("🔄 Setting client-accessible cookies...");
-
-    // Set token with both httpOnly and non-httpOnly versions to ensure client access
-    response.cookies.set("spotify_access_token", tokenData.access_token, {
-      path: "/",
-      maxAge: tokenData.expires_in,
-      sameSite: "lax",
-      secure: process.env.NODE_ENV === "production",
-      httpOnly: false, // Must be accessible to client JavaScript
+    console.log("✅ Returning HTML with cookie-setting JavaScript");
+    return new NextResponse(htmlResponse, {
+      headers: {
+        "Content-Type": "text/html",
+      },
     });
-
-    response.cookies.set("spotify_token_expiry", expiryTime.toString(), {
-      path: "/",
-      maxAge: tokenData.expires_in,
-      sameSite: "lax",
-      secure: process.env.NODE_ENV === "production",
-      httpOnly: false, // Must be accessible to client JavaScript
-    });
-
-    if (tokenData.refresh_token) {
-      response.cookies.set("spotify_refresh_token", tokenData.refresh_token, {
-        path: "/",
-        maxAge: 30 * 24 * 60 * 60, // 30 days
-        sameSite: "lax",
-        secure: process.env.NODE_ENV === "production",
-        httpOnly: false, // Must be accessible to client JavaScript
-      });
-    }
-
-    response.cookies.set("spotify_user", JSON.stringify(userProfile), {
-      path: "/",
-      maxAge: tokenData.expires_in,
-      sameSite: "lax",
-      secure: process.env.NODE_ENV === "production",
-      httpOnly: false, // Must be accessible to client JavaScript
-    });
-
-    console.log("✅ Client-accessible cookies set, redirecting to /search");
-    return response;
   } catch (error) {
     console.error("❌ Error during Spotify authentication:", error);
     return NextResponse.redirect(
