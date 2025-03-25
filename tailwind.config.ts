@@ -25,8 +25,6 @@ const config: Config = {
   },
   // @ts-expect-error - DaisyUI plugin options
   daisyui: {
-    themes: ["retro"],
-    darkTheme: "retro",
     logs: false,
   },
   plugins: [daisyui],
