@@ -5,8 +5,8 @@ import Link from "next/link";
 import Mascot from "@/app/components/Mascot";
 import SearchAutocomplete from "@/app/components/SearchAutocomplete";
 import SpotifyPlayer from "@/app/components/SpotifyPlayer";
-import { searchSpotifyTracks } from "@/app/lib/actions";
-import { getAccessToken } from "@/app/lib/session";
+import { searchSpotifyTracks } from "@/app/lib/client-actions";
+import { getAccessToken } from "@/app/lib/client-session";
 
 // Types for Spotify API responses
 type SpotifyImage = {
@@ -50,9 +50,9 @@ export default function SearchPage() {
 
   // Load access token when component mounts
   useEffect(() => {
-    const loadAccessToken = async () => {
+    const loadAccessToken = () => {
       try {
-        const token = await getAccessToken();
+        const token = getAccessToken();
         if (token) {
           setAccessToken(token);
         }

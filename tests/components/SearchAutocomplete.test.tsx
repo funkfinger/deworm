@@ -5,10 +5,10 @@ import "@testing-library/jest-dom";
 import SearchAutocomplete, {
   SpotifyTrack,
 } from "@/app/components/SearchAutocomplete";
-import * as actions from "@/app/lib/actions";
+import * as actions from "@/app/lib/client-actions";
 
 // Mock the API call
-vi.mock("@/app/lib/actions", () => ({
+vi.mock("@/app/lib/client-actions", () => ({
   searchSpotifyTracks: vi.fn(),
 }));
 

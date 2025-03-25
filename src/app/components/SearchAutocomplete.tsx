@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { searchSpotifyTracks } from "@/app/lib/actions";
 import { useDebounce } from "@/app/hooks/useDebounce";
+import { searchSpotifyTracks } from "@/app/lib/client-actions";
 
 // Types for Spotify API responses
 type SpotifyImage = {
