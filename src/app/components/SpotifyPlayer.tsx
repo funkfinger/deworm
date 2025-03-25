@@ -114,7 +114,13 @@ export default function SpotifyPlayer({
 
   // Initialize Spotify Player when SDK is loaded
   useEffect(() => {
-    if (!sdkLoaded || !accessToken || playerInitialized.current) return;
+    if (!sdkLoaded || !accessToken) return;
+
+    // Avoid multiple initialization attempts
+    if (playerInitialized.current) {
+      console.log("Player already being initialized, skipping");
+      return;
+    }
 
     console.log("🔄 Setting up Spotify Web Playback SDK...");
     playerInitialized.current = true;
@@ -134,6 +140,17 @@ export default function SpotifyPlayer({
       const initializePlayer = () => {
         try {
           console.log("🔄 Initializing Spotify player with token...");
+
+          // Check if Spotify SDK is available
+          if (!window.Spotify) {
+            console.error("❌ Spotify SDK not available yet");
+            setError(
+              "Spotify player couldn't be initialized. Please refresh the page."
+            );
+            playerInitialized.current = false;
+            return null;
+          }
+
           const player = new window.Spotify.Player({
             name: "Deworm Web Player",
             getOAuthToken: (callback) => {
@@ -333,6 +350,13 @@ export default function SpotifyPlayer({
         try {
           console.log(`🔄 Playing track on device ${deviceId}`);
 
+          // Ensure we still have a valid accessToken
+          if (!accessToken) {
+            console.error("❌ No access token available for playback");
+            setError("Authentication error. Please log in again.");
+            return;
+          }
+
           const response = await fetch(
             `https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`,
             {
@@ -342,6 +366,7 @@ export default function SpotifyPlayer({
                 "Content-Type": "application/json",
                 Authorization: `Bearer ${accessToken}`,
               },
+              redirect: "follow",
             }
           );
 

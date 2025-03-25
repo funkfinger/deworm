@@ -358,47 +358,77 @@ export default function ReplacementPage() {
                           </tr>
                         </thead>
                         <tbody>
-                          {playlistTracks.map((item, index) => (
-                            <tr key={item.track.id} className="hover">
-                              <td>{index + 1}</td>
-                              <td>
-                                <div className="flex items-center gap-2">
-                                  {item.track.album.images &&
-                                    item.track.album.images.length > 0 &&
-                                    item.track.album.images[
-                                      item.track.album.images.length - 1
-                                    ]?.url && (
-                                      <img
-                                        src={
-                                          item.track.album.images[
-                                            item.track.album.images.length - 1
-                                          ]?.url
-                                        }
-                                        alt={
-                                          item.track.album.name || "Album cover"
-                                        }
-                                        className="w-8 h-8 rounded"
-                                      />
-                                    )}
-                                  <span>{item.track.name}</span>
-                                </div>
-                              </td>
-                              <td>
-                                {item.track.artists
-                                  .map((artist) => artist.name)
-                                  .join(", ")}
-                              </td>
-                              <td>{formatDuration(item.track.duration_ms)}</td>
-                              <td>
-                                <button
-                                  className="btn btn-xs btn-primary"
-                                  onClick={() => handleSelectTrack(item.track)}
-                                >
-                                  Play
-                                </button>
+                          {playlistTracks && playlistTracks.length > 0 ? (
+                            playlistTracks.map((item, index) => (
+                              <tr
+                                key={item?.track?.id || `track-${index}`}
+                                className="hover"
+                              >
+                                <td>{index + 1}</td>
+                                <td>
+                                  <div className="flex items-center gap-2">
+                                    {(() => {
+                                      // Safely get image URL with all proper checks
+                                      const images = item?.track?.album?.images;
+                                      const lastImageIndex =
+                                        images && images.length > 0
+                                          ? images.length - 1
+                                          : -1;
+                                      const imageUrl =
+                                        lastImageIndex >= 0
+                                          ? images[lastImageIndex]?.url
+                                          : null;
+                                      const albumName =
+                                        item?.track?.album?.name ||
+                                        "Album cover";
+
+                                      return imageUrl ? (
+                                        <img
+                                          src={imageUrl}
+                                          alt={albumName}
+                                          className="w-8 h-8 rounded"
+                                        />
+                                      ) : null;
+                                    })()}
+                                    <span>
+                                      {item?.track?.name || "Unknown track"}
+                                    </span>
+                                  </div>
+                                </td>
+                                <td>
+                                  {item?.track?.artists &&
+                                  item.track.artists.length > 0
+                                    ? item.track.artists
+                                        .map((artist) => artist.name)
+                                        .join(", ")
+                                    : "Unknown artist"}
+                                </td>
+                                <td>
+                                  {item?.track?.duration_ms
+                                    ? formatDuration(item.track.duration_ms)
+                                    : "--:--"}
+                                </td>
+                                <td>
+                                  <button
+                                    className="btn btn-xs btn-primary"
+                                    onClick={() =>
+                                      item?.track &&
+                                      handleSelectTrack(item.track)
+                                    }
+                                    disabled={!item?.track}
+                                  >
+                                    Play
+                                  </button>
+                                </td>
+                              </tr>
+                            ))
+                          ) : (
+                            <tr>
+                              <td colSpan={5} className="text-center py-4">
+                                No tracks available
                               </td>
                             </tr>
-                          ))}
+                          )}
                         </tbody>
                       </table>
                     </div>
