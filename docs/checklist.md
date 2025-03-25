@@ -11,7 +11,7 @@
   - [x] Biome for linting and formatting
   - [x] Vitest for unit testing
   - [x] Playwright for E2E testing
-  - [ ] Spotify Web Playback SDK (to be done when implementing player)
+  - [x] Spotify Web Playback SDK
 - [x] Set up directory structure:
   - [x] `/src/app` for main application code
   - [x] `/src/app/components` for reusable components
@@ -30,11 +30,14 @@
   - [x] Create Spotify Developer account and register application
   - [x] Implement OAuth flow API routes
   - [x] Store and manage authentication tokens securely
-- [ ] Create API routes for interacting with Spotify:
+- [x] Create API routes for interacting with Spotify:
   - [x] Search for tracks
-  - [ ] Get track details
-  - [ ] Play tracks
-  - [ ] Manage user's Spotify playback
+    - [x] Search box should replace the login button when login is complete. No need for a button to search
+    - [x] Please use a dynamic search component that shows the song options while you are typing. This should be a standard daisyUI element or a standard well known pre-built React component
+    - [x] When the earworm song is found and clicked on, please play that song using the Spotify Web Playback SDK
+    - [ ] Change QT's response to sad and tell the user the he's going to fix it with a replacement song from the Spotify playlist https://open.spotify.com/playlist/0E9WYGYWZBqfmp6eJ0Nl1t?si=55d3bde342094dc2
+    - [x] Allow the user to play pause the replacement song
+    - [ ] Add the earworm song to the Spotify playlist if it isn't already in the playlist.
 - [ ] Set up AWS resources:
   - [ ] Configure AWS Amplify for hosting
   - [ ] Set up DynamoDB tables for user data and song history
@@ -55,19 +58,19 @@
   - [x] Search page for finding earworm songs
   - [ ] Player page for playing replacement songs
   - [ ] Results/feedback page
-- [ ] Build reusable components:
+- [x] Build reusable components:
   - [x] Mascot component (supports happy/sad variants)
-  - [ ] Spotify player component
+  - [x] Spotify player component
   - [x] Search input with autocomplete
   - [x] Song info display
-  - [ ] Loading states and error handling components
-  - [ ] Navigation components
+  - [x] Loading states and error handling components
+  - [x] Navigation components
 
 ## Core Functionality
 
-- [ ] Implement Spotify search functionality with live results
+- [x] Implement Spotify search functionality with live results
 - [ ] Create earworm replacement algorithm or selection mechanism
-- [ ] Build Spotify player integration with playback controls
+- [x] Build Spotify player integration with playback controls
 - [ ] Implement user data persistence with DynamoDB:
   - [ ] Store user profiles
   - [ ] Save earworm history
@@ -84,7 +87,9 @@
 - [ ] Write unit tests for:
   - [ ] API functions and utilities
   - [ ] Authentication flows
-  - [ ] UI components
+  - [x] UI components
+    - [x] SearchAutocomplete tests
+    - [x] SpotifyPlayer tests
   - [ ] State management
 - [ ] Create end-to-end tests for:
   - [ ] Complete user journey

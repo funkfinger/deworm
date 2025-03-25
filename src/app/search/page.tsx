@@ -103,9 +103,21 @@ export default function SearchPage() {
 
   const handleSetAsEarworm = (track: SpotifyTrack) => {
     setEarwormTrack(track);
-    // Here you would typically save this to the database
-    // For now, we'll just display a notification
-    alert(`${track.name} set as your earworm!`);
+
+    // Redirect to the replacement page with track info
+    const params = new URLSearchParams({
+      trackId: track.id,
+      trackName: track.name,
+      artist: track.artists.map((a) => a.name).join(", "),
+      uri: track.uri,
+    });
+
+    // Add album image if available
+    if (track.album.images && track.album.images.length > 0) {
+      params.append("image", track.album.images[0].url);
+    }
+
+    window.location.href = `/replacement?${params.toString()}`;
   };
 
   return (
@@ -255,7 +267,20 @@ export default function SearchPage() {
                       </div>
                     </div>
                     <div className="card-actions justify-end mt-4">
-                      <Link href="/dashboard" className="btn btn-outline">
+                      <Link
+                        href={`/replacement?trackId=${
+                          earwormTrack.id
+                        }&trackName=${encodeURIComponent(
+                          earwormTrack.name
+                        )}&artist=${encodeURIComponent(
+                          earwormTrack.artists.map((a) => a.name).join(", ")
+                        )}&uri=${encodeURIComponent(
+                          earwormTrack.uri
+                        )}&image=${encodeURIComponent(
+                          earwormTrack.album.images?.[0]?.url || ""
+                        )}`}
+                        className="btn btn-primary"
+                      >
                         Find Replacement
                       </Link>
                     </div>
