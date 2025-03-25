@@ -51,13 +51,14 @@ export default function Mascot({
     mood === "sad" ? "/images/mascot-sad.svg" : "/images/mascot.svg";
 
   return (
-    <div className={className}>
+    <div className={`${className} relative`}>
       <Image
         src={imageSrc}
         alt={alt}
         width={width}
         height={height}
         priority={priority}
+        className="drop-shadow-md"
       />
     </div>
   );

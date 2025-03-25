@@ -1,31 +1,6 @@
 @import "tailwindcss";
 @plugin "daisyui";
 
-:root {
-  --foreground: #171717;
-  --background: #ffffff;
-  --primary: #1db954; /* Spotify green */
-  --primary-foreground: #ffffff;
-  --secondary: #191414; /* Spotify black */
-  --secondary-foreground: #ffffff;
-  --accent: #ff7eb9; /* Pink for our QT mascot */
-  --accent-foreground: #171717;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --foreground: #ededed;
-    --background: #0a0a0a;
-    --primary: #1db954;
-    --primary-foreground: #ffffff;
-    --secondary: #191414;
-    --secondary-foreground: #ffffff;
-    --accent: #ff7eb9;
-    --accent-foreground: #171717;
-  }
-}
-
 body {
-  color: var(--foreground);
-  background: var(--background);
+  min-height: 100vh;
 }

@@ -25,47 +25,8 @@ const config: Config = {
   },
   // @ts-expect-error - DaisyUI plugin options
   daisyui: {
-    themes: [
-      {
-        light: {
-          primary: "#1DB954", // Spotify green
-          "primary-content": "#ffffff",
-          secondary: "#191414", // Spotify black
-          "secondary-content": "#ffffff",
-          accent: "#FF7EB9", // Pink for mascot
-          "accent-content": "#171717",
-          neutral: "#2a2a2a",
-          "neutral-content": "#ffffff",
-          "base-100": "#ffffff",
-          "base-200": "#f8f8f8",
-          "base-300": "#ebebeb",
-          "base-content": "#171717",
-          info: "#3abff8",
-          success: "#36d399",
-          warning: "#fbbd23",
-          error: "#f87272",
-        },
-        dark: {
-          primary: "#1DB954", // Same Spotify green
-          "primary-content": "#ffffff",
-          secondary: "#191414", // Same Spotify black
-          "secondary-content": "#ffffff",
-          accent: "#FF7EB9", // Same pink
-          "accent-content": "#171717",
-          neutral: "#1f1f1f",
-          "neutral-content": "#ffffff",
-          "base-100": "#0a0a0a",
-          "base-200": "#171717",
-          "base-300": "#262626",
-          "base-content": "#ededed",
-          info: "#3abff8",
-          success: "#36d399",
-          warning: "#fbbd23",
-          error: "#f87272",
-        },
-      },
-    ],
-    darkTheme: "dark",
+    themes: ["retro"],
+    darkTheme: "retro",
     logs: false,
   },
   plugins: [daisyui],
