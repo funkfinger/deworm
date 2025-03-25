@@ -28,12 +28,6 @@ export type SpotifyTrack = {
   duration_ms: number;
 };
 
-interface SearchResults {
-  tracks: {
-    items: SpotifyTrack[];
-  };
-}
-
 export interface SearchAutocompleteProps {
   onTrackSelected: (track: SpotifyTrack) => void;
 }
@@ -80,11 +74,16 @@ export default function SearchAutocomplete({
       setError(null);
 
       try {
-        const data = (await searchSpotifyTracks(
-          debouncedSearchTerm,
-          5
-        )) as SearchResults;
-        setResults(data.tracks.items);
+        const data = await searchSpotifyTracks(debouncedSearchTerm, 5);
+
+        // Check if data and tracks exist before setting results
+        if (data && data.tracks && Array.isArray(data.tracks.items)) {
+          setResults(data.tracks.items);
+        } else {
+          // Handle case where response structure is unexpected
+          console.error("Unexpected response structure:", data);
+          setError("Invalid response from Spotify API. Please try again.");
+        }
       } catch (err) {
         console.error("Error searching tracks:", err);
         setError("Failed to search tracks. Please try again.");

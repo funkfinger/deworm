@@ -225,12 +225,16 @@ export default function ReplacementPage() {
         randomIndex = Math.floor(Math.random() * playlistTracks.length);
       } while (
         selectedTrack &&
-        playlistTracks[randomIndex].track.id === selectedTrack.id &&
+        playlistTracks[randomIndex]?.track?.id === selectedTrack.id &&
         playlistTracks.length > 1
       );
 
-      setSelectedTrack(playlistTracks[randomIndex].track);
-      setShowPlayer(true);
+      // Ensure we have a valid track before setting it
+      const trackToSelect = playlistTracks[randomIndex]?.track;
+      if (trackToSelect) {
+        setSelectedTrack(trackToSelect);
+        setShowPlayer(true);
+      }
     }
   };
 
@@ -360,14 +364,19 @@ export default function ReplacementPage() {
                               <td>
                                 <div className="flex items-center gap-2">
                                   {item.track.album.images &&
-                                    item.track.album.images.length > 0 && (
+                                    item.track.album.images.length > 0 &&
+                                    item.track.album.images[
+                                      item.track.album.images.length - 1
+                                    ]?.url && (
                                       <img
                                         src={
                                           item.track.album.images[
                                             item.track.album.images.length - 1
-                                          ].url
+                                          ]?.url
                                         }
-                                        alt={item.track.album.name}
+                                        alt={
+                                          item.track.album.name || "Album cover"
+                                        }
                                         className="w-8 h-8 rounded"
                                       />
                                     )}
