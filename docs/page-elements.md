@@ -23,4 +23,6 @@
 ## Earworm Search Page
 
 - Happy Mascot
-- Search box is primary element
+- daisyUI Chat Bubble Text - "Great! Now lets find that nasty ear worm..."
+- daisyUI input component - initial text - "start typing to search for your ear worm"
+- Search input form with Autocomplete functionality.

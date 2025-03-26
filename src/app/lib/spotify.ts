@@ -179,11 +179,32 @@ export interface SpotifyTokenResponse {
   scope: string;
 }
 
-export interface SpotifyUser {
+export type SpotifyImage = {
+  url: string;
+  height: number;
+  width: number;
+};
+
+export type SpotifyUser = {
   id: string;
-  display_name: string;
+  display_name: string | null;
   email: string;
-  images: Array<{ url: string }>;
-  product: string;
+  images?: SpotifyImage[];
+};
+
+export type SpotifyArtist = {
+  id: string;
+  name: string;
+};
+
+export type SpotifyTrack = {
+  id: string;
+  name: string;
   uri: string;
-}
+  album: {
+    name: string;
+    images: SpotifyImage[];
+  };
+  artists: SpotifyArtist[];
+  duration_ms: number;
+};

@@ -3,30 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useDebounce } from "@/app/hooks/useDebounce";
 import { searchSpotifyTracks } from "@/app/lib/client-actions";
-
-// Types for Spotify API responses
-type SpotifyImage = {
-  url: string;
-  height: number;
-  width: number;
-};
-
-type SpotifyArtist = {
-  id: string;
-  name: string;
-};
-
-export type SpotifyTrack = {
-  id: string;
-  name: string;
-  uri: string;
-  album: {
-    name: string;
-    images: SpotifyImage[];
-  };
-  artists: SpotifyArtist[];
-  duration_ms: number;
-};
+import type { SpotifyTrack } from "@/app/lib/spotify";
 
 export interface SearchAutocompleteProps {
   onTrackSelected: (track: SpotifyTrack) => void;
@@ -95,13 +72,6 @@ export default function SearchAutocomplete({
     fetchResults();
   }, [debouncedSearchTerm]);
 
-  // Format track duration from milliseconds to minutes:seconds
-  const formatDuration = (ms: number): string => {
-    const minutes = Math.floor(ms / 60000);
-    const seconds = Math.floor((ms % 60000) / 1000);
-    return `${minutes}:${seconds.toString().padStart(2, "0")}`;
-  };
-
   // Get album image URL from track
   const getAlbumImage = (track: SpotifyTrack) => {
     if (track.album.images && track.album.images.length > 0) {
@@ -127,7 +97,7 @@ export default function SearchAutocomplete({
         <input
           type="text"
           className="input input-bordered w-full"
-          placeholder="Type to search for songs..."
+          placeholder="start typing to search for your earworm"
           value={query}
           onChange={handleInputChange}
           onFocus={() => setIsFocused(true)}
@@ -145,14 +115,10 @@ export default function SearchAutocomplete({
             </div>
           ) : error ? (
             <div className="p-4 text-error">{error}</div>
-          ) : results.length > 0 ? (
+          ) : (
             <ul>
               {results.map((track) => (
-                <li
-                  key={track.id}
-                  className="p-2 hover:bg-base-300 cursor-pointer"
-                  onClick={() => handleTrackClick(track)}
-                >
+                <li key={track.id} className="p-2 hover:bg-base-300">
                   <div className="flex items-center gap-2">
                     {getAlbumImage(track) && (
                       <img
@@ -167,16 +133,17 @@ export default function SearchAutocomplete({
                         {track.artists.map((a) => a.name).join(", ")}
                       </p>
                     </div>
-                    <div className="text-xs opacity-50">
-                      {formatDuration(track.duration_ms)}
-                    </div>
+                    <button
+                      onClick={() => handleTrackClick(track)}
+                      className="btn btn-sm btn-primary"
+                    >
+                      UGH! MY WORM!
+                    </button>
                   </div>
                 </li>
               ))}
             </ul>
-          ) : query ? (
-            <div className="p-4 text-center opacity-70">No results found</div>
-          ) : null}
+          )}
         </div>
       )}
     </div>
