@@ -30,14 +30,16 @@
   - [x] Create Spotify Developer account and register application
   - [x] Implement OAuth flow API routes
   - [x] Store and manage authentication tokens securely
+  - [x] Display logout button on every page - perhaps in the header
 - [x] Create API routes for interacting with Spotify:
   - [x] Search for tracks
     - [x] Search box should replace the login button when login is complete. No need for a button to search
+      - [x] Only one search field is necessary - please remove the non-type-ahead non-autocomplete version.
     - [x] Please use a dynamic search component that shows the song options while you are typing. This should be a standard daisyUI element or a standard well known pre-built React component
     - [x] When the earworm song is found and clicked on, please play that song using the Spotify Web Playback SDK
-    - [ ] Change QT's response to sad and tell the user the he's going to fix it with a replacement song from the Spotify playlist https://open.spotify.com/playlist/0E9WYGYWZBqfmp6eJ0Nl1t?si=55d3bde342094dc2
+    - [x] Change QT's response to sad and tell the user the he's going to fix it with a replacement song from the Spotify playlist https://open.spotify.com/playlist/0E9WYGYWZBqfmp6eJ0Nl1t?si=55d3bde342094dc2
     - [x] Allow the user to play pause the replacement song
-    - [ ] Add the earworm song to the Spotify playlist if it isn't already in the playlist.
+    - [x] Add the earworm song to the Spotify playlist if it isn't already in the playlist.
 - [ ] Set up AWS resources:
   - [ ] Configure AWS Amplify for hosting
   - [ ] Set up DynamoDB tables for user data and song history
@@ -56,8 +58,8 @@
   - [x] Homepage/welcome screen (with mascot and styled button)
   - [x] Spotify login page/component
   - [x] Search page for finding earworm songs
-  - [ ] Player page for playing replacement songs
-  - [ ] Results/feedback page
+  - [x] Player page for playing replacement songs
+  - [x] Results/feedback page
 - [x] Build reusable components:
   - [x] Mascot component (supports happy/sad variants)
   - [x] Spotify player component
@@ -69,7 +71,7 @@
 ## Core Functionality
 
 - [x] Implement Spotify search functionality with live results
-- [ ] Create earworm replacement algorithm or selection mechanism
+- [x] Create earworm replacement algorithm or selection mechanism
 - [x] Build Spotify player integration with playback controls
 - [ ] Implement user data persistence with DynamoDB:
   - [ ] Store user profiles

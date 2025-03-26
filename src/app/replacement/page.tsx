@@ -405,20 +405,21 @@ export default function ReplacementPage() {
                       <div className="flex-1">
                         <h2 className="card-title">Recommended Replacement</h2>
                         <div className="flex items-center gap-3 my-2">
-                          {selectedTrack.album.images &&
-                            selectedTrack.album.images[0] && (
-                              <img
-                                src={selectedTrack.album.images[0].url}
-                                alt={selectedTrack.album.name}
-                                className="w-12 h-12 rounded-md"
-                              />
-                            )}
+                          {selectedTrack.album?.images?.[0]?.url && (
+                            <img
+                              src={selectedTrack.album.images[0].url}
+                              alt={selectedTrack.album.name || "Album cover"}
+                              className="w-12 h-12 rounded-md"
+                            />
+                          )}
                           <div>
-                            <p className="font-bold">{selectedTrack.name}</p>
+                            <p className="font-bold">
+                              {selectedTrack.name || "Unknown track"}
+                            </p>
                             <p className="text-sm opacity-75">
                               {selectedTrack.artists
-                                .map((artist) => artist.name)
-                                .join(", ")}
+                                ?.map((artist) => artist.name)
+                                .join(", ") || "Unknown artist"}
                             </p>
                           </div>
                         </div>
