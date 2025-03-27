@@ -49,6 +49,7 @@ interface SpotifyPlayerProps {
   onPlayerReady?: () => void;
   onPlayerError?: (error: Error) => void;
   onTrackEnd?: () => void;
+  autoPlay?: boolean;
 }
 
 // Define Spotify SDK types locally
@@ -86,6 +87,7 @@ export default function SpotifyPlayer({
   onPlayerReady,
   onPlayerError,
   onTrackEnd,
+  autoPlay,
 }: SpotifyPlayerProps) {
   const [player, setPlayer] = useState<SpotifySDKPlayer | null>(null);
   const [isReady, setIsReady] = useState(false);
@@ -655,9 +657,12 @@ export default function SpotifyPlayer({
               throw new Error("Failed to load track");
             }
 
-            // Start playback
-            await player.togglePlay();
-            setIsPlaying(true);
+            // Start playback if autoPlay is true
+            if (autoPlay) {
+              await player.togglePlay();
+              setIsPlaying(true);
+            }
+
             setError(null);
             log("Track playback initiated successfully");
           } catch (playbackError) {
@@ -697,6 +702,7 @@ export default function SpotifyPlayer({
     onPlayerError,
     onTrackEnd,
     volume,
+    autoPlay,
   ]);
 
   // Toggle play/pause
