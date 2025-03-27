@@ -1,17 +1,17 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Mascot from "@/app/components/Mascot";
 import SearchAutocomplete from "@/app/components/SearchAutocomplete";
-import SpotifyPlayer from "@/app/components/SpotifyPlayer";
 import { getAccessToken, isAuthenticated } from "@/app/lib/client-session";
+import { useSpotifyPlayer } from "@/app/contexts/SpotifyPlayerContext";
 import type { SpotifyTrack } from "@/app/lib/spotify";
 
 export default function SearchPage() {
-  const [accessToken, setAccessToken] = useState<string | null>(null);
-  const [selectedTrack, setSelectedTrack] = useState<SpotifyTrack | null>(null);
-  const [showPlayer, setShowPlayer] = useState(false);
+  const router = useRouter();
+  const { setCurrentTrack, setAccessToken } = useSpotifyPlayer();
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthChecked, setIsAuthChecked] = useState(false);
@@ -42,28 +42,11 @@ export default function SearchPage() {
     };
 
     loadAccessToken();
-  }, []);
+  }, [setAccessToken]);
 
   const handleTrackSelected = (track: SpotifyTrack) => {
-    setSelectedTrack(track);
-    setShowPlayer(true);
-  };
-
-  const handleSetAsEarworm = (track: SpotifyTrack) => {
-    // Redirect to the replacement page with track info
-    const params = new URLSearchParams({
-      trackId: track.id,
-      trackName: track.name,
-      artist: track.artists.map((artist) => artist.name).join(", "),
-      uri: track.uri,
-    });
-
-    // Add album image if available
-    if (track.album?.images?.[0]?.url) {
-      params.append("image", track.album.images[0].url);
-    }
-
-    window.location.href = `/replacement?${params.toString()}`;
+    setCurrentTrack(track);
+    router.push("/solution");
   };
 
   // Show loading state while checking authentication
@@ -76,7 +59,7 @@ export default function SearchPage() {
   }
 
   // Show login button if not authenticated
-  if (isAuthChecked && !accessToken) {
+  if (isAuthChecked && !getAccessToken()) {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="flex flex-col items-center justify-center mt-10">
@@ -114,24 +97,6 @@ export default function SearchPage() {
         {error && (
           <div className="alert alert-error mt-4">
             <span>{error}</span>
-          </div>
-        )}
-
-        {showPlayer && selectedTrack && accessToken && (
-          <div className="mt-6">
-            <SpotifyPlayer
-              accessToken={accessToken}
-              trackUri={selectedTrack.uri}
-              onPlayerError={(error) => setError(error.message)}
-            />
-            <div className="flex justify-center mt-4">
-              <button
-                className="btn btn-primary"
-                onClick={() => handleSetAsEarworm(selectedTrack)}
-              >
-                This Is My Earworm
-              </button>
-            </div>
           </div>
         )}
       </div>
