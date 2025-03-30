@@ -1,5 +1,5 @@
 # Run Biome linting and formatting
 npx @biomejs/biome check --write ./src
 
-# Skip tests for now since we don't have any yet
-# npm test
+# Run component and API tests
+npm run test:components && npm run test:api

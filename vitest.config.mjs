@@ -10,6 +10,18 @@ export default defineConfig({
     setupFiles: ["./tests/setup.js"],
     include: ["./tests/unit/**/*.{test,spec}.{js,ts,jsx,tsx}"],
     exclude: ["./tests/e2e/**/*", "./tests/test-results/**/*", "node_modules"],
+    coverage: {
+      provider: "v8",
+      reporter: ["text", "json", "html"],
+      reportsDirectory: "./tests/coverage",
+      exclude: [
+        "node_modules/**",
+        "tests/**",
+        "**/*.d.ts",
+        "**/*.test.{ts,tsx}",
+        "**/*.spec.{ts,tsx}",
+      ],
+    },
   },
   resolve: {
     alias: {

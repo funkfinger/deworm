@@ -1,10 +1,10 @@
-"use client";
+'use client';
 
-import { faCookieBite } from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { useEffect, useState } from "react";
+import { faCookieBite } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { useEffect, useState } from 'react';
 
-const COOKIE_CONSENT_KEY = "deworm-cookie-consent";
+const COOKIE_CONSENT_KEY = 'deworm-cookie-consent';
 
 export default function CookieConsent() {
   const [showConsent, setShowConsent] = useState(false);
@@ -18,7 +18,7 @@ export default function CookieConsent() {
   }, []);
 
   const acceptCookies = () => {
-    localStorage.setItem(COOKIE_CONSENT_KEY, "true");
+    localStorage.setItem(COOKIE_CONSENT_KEY, 'true');
     setShowConsent(false);
   };
 
