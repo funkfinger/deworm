@@ -17,13 +17,17 @@
     "prepare": "husky install"
   },
   "dependencies": {
+    "@auth/core": "^0.38.0",
     "@fortawesome/fontawesome-svg-core": "^6.7.2",
     "@fortawesome/free-solid-svg-icons": "^6.7.2",
     "@fortawesome/react-fontawesome": "^0.2.2",
     "daisyui": "^5.0.9",
     "next": "15.2.4",
+    "next-auth": "^5.0.0-beta.25",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "spotify-web-api-node": "^5.0.2",
+    "uuid": "^11.1.0"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
@@ -33,11 +37,14 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/spotify-web-api-node": "^5.0.11",
+    "@types/uuid": "^10.0.0",
     "@vitejs/plugin-react": "^4.3.4",
     "@vitest/ui": "^3.0.9",
     "eslint": "^9",
     "eslint-config-next": "15.2.4",
     "husky": "^9.1.7",
+    "jsdom": "^26.0.0",
     "playwright": "^1.51.1",
     "tailwindcss": "^4",
     "typescript": "^5",

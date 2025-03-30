@@ -36,13 +36,13 @@ DeWorm is a web application designed to help users cure "earworms" (songs stuck 
 ### Phase 2: Authentication & Infrastructure
 
 - [ ] Set up AWS Amplify Gen 2 project
-- [ ] Configure DynamoDB tables for users, earworms, and effectiveness data
-- [ ] Register app with Spotify Developer Dashboard
-- [ ] Implement Spotify OAuth flow
-- [ ] Create typed API client for Spotify interactions
-- [ ] Set up token refreshing and session management
-- [ ] Implement login/logout functionality
-- [ ] Add GDPR compliance and cookie consent
+- [x] Configure DynamoDB tables for users, earworms, and effectiveness data (using local files for now)
+- [x] Register app with Spotify Developer Dashboard
+- [x] Implement Spotify OAuth flow
+- [x] Create typed API client for Spotify interactions
+- [x] Set up token refreshing and session management
+- [x] Implement login/logout functionality
+- [x] Add GDPR compliance and cookie consent
 
 ### Phase 3: Core Components Development
 
