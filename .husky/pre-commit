@@ -1,6 +1,3 @@
-#!/usr/bin/env sh
-. "$(dirname -- "$0")/_/husky.sh"
-
 # Run Biome linting and formatting
 npx @biomejs/biome check --write ./src
 
