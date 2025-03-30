@@ -46,14 +46,14 @@ DeWorm is a web application designed to help users cure "earworms" (songs stuck 
 
 ### Phase 3: Core Components Development
 
-- [ ] Develop reusable UI components:
-  - [ ] Chat bubble component for QT's messages
-  - [ ] Mascot component with different emotional states
-  - [ ] Spotify song card component
-  - [ ] Button components with proper styling
-  - [ ] Search input with autocomplete
-- [ ] Implement Spotify Web Playback SDK integration
-- [ ] Create API routes for Spotify interactions
+- [x] Develop reusable UI components:
+  - [x] Chat bubble component for QT's messages
+  - [x] Mascot component with different emotional states
+  - [x] Spotify song card component
+  - [x] Button components with proper styling
+  - [x] Search input with autocomplete
+- [x] Implement Spotify Web Playback SDK integration
+- [x] Create API routes for Spotify interactions
 
 ### Phase 4: Page Implementation
 
