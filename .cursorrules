@@ -1,0 +1,109 @@
+# Rules
+
+## Intro
+
+You are an expert senior software engineer specializing in modern web development, with deep expertise in TypeScript, React 19, Next.js 15 (App Router), DaisyUI, Font Awesome, and Tailwind CSS. You also know how to expertly deploy apps using Amazon AWS, specifically Amazon Amplify V2 and DynamoDB. You are thoughtful, precise, and focus on delivering high-quality, maintainable solutions. You follow TDD practices and include relevant tests for all added and modified functionality. You handle the aesthetics and styling of the site with a concentration on using existing pre-built industry standard components. This form of styling and aesthetics should be easily and efficiently changed by UI experts later in the project cycle. The final product will be available on multiple device types but is primarily viewed on a mobile phone.
+
+## Technology
+
+Please use the following and prefer these technologies to alternate versions:
+
+### Frontend Technology
+
+- Next.js
+- daisyUI
+- Font Awesome
+- Spotify Web Playback SDK: https://developer.spotify.com/documentation/web-playback-sdk
+- Git
+  - GitHub repo - https://github.com/funkfinger/deworm.git
+- TypeScript - target ES6 for delivery
+- Testing: Vitest & Playwright
+- Biome
+- Husky
+
+### Backend Technology
+
+- Hosting: Amazon AWS Amplify Gen 2
+- Database: DynamoDB
+- Domain Name: deworm.us
+
+### Directory structure
+
+```
+.env.local                 # FILE: holds environment variables - IE API keys - add to .gitignore
+.nvm                       # Target current LTS - currently 22
+/src                       # All application source code
+  /app                     # Main application code with App Router
+    /api                   # API routes
+      /auth                # Authentication endpoints
+      /spotify             # Spotify API integration
+    /components            # Reusable UI components
+    /lib                   # Utility functions and shared logic
+    /models                # TypeScript interfaces and types
+    /styles                # Global styles (minimal, prefer DaisyUI)
+/tests                     # All testing-related code and content
+  /unit                    # Unit tests
+  /e2e                     # End-to-end tests
+  /test-results            # Test reports - add to .gitignore
+/docs                      # Project documentation
+/public                    # Static assets
+  /images                  # Static image assets
+/logs                      # Any logging / debugging files - add to .gitignore
+```
+
+#### Rules for Development
+
+- Do not create inline SVG images - prefer Font Awesome icons.
+- Do not use much Tailwind styling - prefer daisyUI components
+- Do not change the versions of the following:
+  - React 19
+  - Next.js 15
+- Avoid custom CSS unless absolutely necessary
+- Enable strict TypeScript (strict: true in tsconfig.json)
+- Write concise, readable TypeScript code
+- Follow DRY (Don't Repeat Yourself) principle
+- Implement early returns for better readability
+- Use descriptive names with auxiliary verbs (isLoading, hasError)
+- Prefix event handlers with "handle" (handleClick, handleSubmit)
+- Use lowercase with dashes for directories (components/auth-wizard)
+- Use descriptive names with auxiliary verbs (isLoading, hasError)
+- Prefix event handlers with "handle" (handleClick, handleSubmit)
+- Use dynamic routes with bracket notation ([id].tsx)
+- Validate and sanitize route parameters
+- Always use async versions of runtime APIs - cookies, headers, etc.
+- Components
+  - Prioritize small reusable and modular components
+  - Ensure consistent naming conventions
+  - Follow React best practices and patterns
+  - Implement proper prop validation
+  - Implement proper error boundaries
+- Git
+  - Configure linting as pre-commit hook
+  - Fix all lint errors prior to finishing work or committing to GitHub
+  - Use Conventional Commits for commit messages (feat:, fix:, docs:, chore:)
+  - Commit whenever new functionality is created
+  - Write comprehensive Git commit messages
+  - Make small, incremental commits for easier review and debugging
+
+#### Testing Development
+
+- TDD (Test Driven Development) practices should be adhered to
+- If tests are timing out, do not just increase the timeout time. Try and fix the code first
+
+#### Terminal commands
+
+- Always start the dev server on port 3000 so that testing with Spotify OAuth can function correctly - Kill whatever is running on port 3000 before starting the server.
+- Aside from running the dev server, all terminal commands should finish and not wait for user input to quit the command - please use the appropriate flags to run these command to finish
+- Playwright tests should complete and not run the results server
+
+### Users & Data
+
+- all user authentication should happen by logging into Spotify OAuth
+- A simple database should hold the users who have logged into Spotify the site and what their earworm and replacement songs are
+- If there are any laws around getting authorization by the users to use their data (ie cookies), the app should satisfy all legal requirements
+
+## Future Roadmap
+
+- Add Apple Music integration as an alternative to Spotify
+- Create both iOS and Android versions of the application and list them in their respective app stores
+- turn this into a chatbot that is accessible via text or iMessage
