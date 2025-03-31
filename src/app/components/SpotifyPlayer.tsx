@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import type { SpotifyTrack } from "@/app/models/spotify";
+import type { SpotifyTrack } from '@/app/models/spotify';
 import {
   faBackward,
   faForward,
@@ -8,9 +8,9 @@ import {
   faPlay,
   faVolumeHigh,
   faVolumeMute,
-} from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { useCallback, useEffect, useState } from "react";
+} from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { useCallback, useEffect, useState } from 'react';
 
 // Define the SDK Player object
 declare global {
@@ -100,10 +100,10 @@ export default function SpotifyPlayer({
   onError,
   onReady,
   autoplay = false,
-  className = "",
+  className = '',
 }: SpotifyPlayerProps) {
   const [player, setPlayer] = useState<SpotifyPlayerInstance | null>(null);
-  const [deviceId, setDeviceId] = useState<string>("");
+  const [deviceId, setDeviceId] = useState<string>('');
   const [isPlaying, setIsPlaying] = useState(false);
   const [volume, setVolume] = useState(50);
   const [isMuted, setIsMuted] = useState(false);
@@ -115,44 +115,44 @@ export default function SpotifyPlayer({
   // Initialize the player
   const initializePlayer = useCallback(() => {
     const newPlayer = new window.Spotify.Player({
-      name: "DeWorm Web Player",
+      name: 'DeWorm Web Player',
       getOAuthToken: (cb: (token: string) => void) => cb(accessToken),
       volume: volume / 100,
     });
 
     // Error handling
-    newPlayer.addListener("initialization_error", (data: unknown) => {
+    newPlayer.addListener('initialization_error', (data: unknown) => {
       const errorEvent = data as PlayerErrorEvent;
-      console.error("Initialization error:", errorEvent.message);
+      console.error('Initialization error:', errorEvent.message);
       setError(`Player initialization error: ${errorEvent.message}`);
       if (onError) onError(errorEvent.message);
     });
 
-    newPlayer.addListener("authentication_error", (data: unknown) => {
+    newPlayer.addListener('authentication_error', (data: unknown) => {
       const errorEvent = data as PlayerErrorEvent;
-      console.error("Authentication error:", errorEvent.message);
+      console.error('Authentication error:', errorEvent.message);
       setError(`Authentication error: ${errorEvent.message}`);
       if (onError) onError(errorEvent.message);
     });
 
-    newPlayer.addListener("account_error", (data: unknown) => {
+    newPlayer.addListener('account_error', (data: unknown) => {
       const errorEvent = data as PlayerErrorEvent;
-      console.error("Account error:", errorEvent.message);
+      console.error('Account error:', errorEvent.message);
       setError(`Account error: ${errorEvent.message}`);
       if (onError) onError(errorEvent.message);
     });
 
-    newPlayer.addListener("playback_error", (data: unknown) => {
+    newPlayer.addListener('playback_error', (data: unknown) => {
       const errorEvent = data as PlayerErrorEvent;
-      console.error("Playback error:", errorEvent.message);
+      console.error('Playback error:', errorEvent.message);
       setError(`Playback error: ${errorEvent.message}`);
       if (onError) onError(errorEvent.message);
     });
 
     // Ready handling
-    newPlayer.addListener("ready", (data: unknown) => {
+    newPlayer.addListener('ready', (data: unknown) => {
       const readyEvent = data as PlayerDeviceEvent;
-      console.log("Ready with Device ID", readyEvent.device_id);
+      console.log('Ready with Device ID', readyEvent.device_id);
       setDeviceId(readyEvent.device_id);
       setIsReady(true);
       setError(null);
@@ -160,14 +160,14 @@ export default function SpotifyPlayer({
     });
 
     // Not Ready handling
-    newPlayer.addListener("not_ready", (data: unknown) => {
+    newPlayer.addListener('not_ready', (data: unknown) => {
       const readyEvent = data as PlayerDeviceEvent;
-      console.log("Device ID has gone offline", readyEvent.device_id);
+      console.log('Device ID has gone offline', readyEvent.device_id);
       setIsReady(false);
     });
 
     // Player State
-    newPlayer.addListener("player_state_changed", (data: unknown) => {
+    newPlayer.addListener('player_state_changed', (data: unknown) => {
       if (!data) return;
 
       const state = data as PlayerStateEvent;
@@ -182,26 +182,26 @@ export default function SpotifyPlayer({
           id: current_track.id,
           name: current_track.name,
           artists: current_track.artists.map((artist) => ({
-            id: artist.uri.split(":").pop() || "",
+            id: artist.uri.split(':').pop() || '',
             name: artist.name,
             external_urls: {
               spotify: `https://open.spotify.com/artist/${
-                artist.uri.split(":").pop() || ""
+                artist.uri.split(':').pop() || ''
               }`,
             },
           })),
           album: {
-            id: current_track.album.uri.split(":").pop() || "",
+            id: current_track.album.uri.split(':').pop() || '',
             name: current_track.album.name,
             images: current_track.album.images.map((image) => ({
               url: image.url,
               height: image.height,
               width: image.width,
             })),
-            release_date: "", // Not available from the SDK state
+            release_date: '', // Not available from the SDK state
             external_urls: {
               spotify: `https://open.spotify.com/album/${
-                current_track.album.uri.split(":").pop() || ""
+                current_track.album.uri.split(':').pop() || ''
               }`,
             },
           },
@@ -220,7 +220,7 @@ export default function SpotifyPlayer({
     // Connect
     newPlayer.connect().then((success: boolean) => {
       if (success) {
-        console.log("The Web Playback SDK successfully connected to Spotify!");
+        console.log('The Web Playback SDK successfully connected to Spotify!');
         setPlayer(newPlayer);
       }
     });
@@ -230,8 +230,8 @@ export default function SpotifyPlayer({
 
   // Load the Spotify Web Playback SDK
   useEffect(() => {
-    const script = document.createElement("script");
-    script.src = "https://sdk.scdn.co/spotify-player.js";
+    const script = document.createElement('script');
+    script.src = 'https://sdk.scdn.co/spotify-player.js';
     script.async = true;
 
     document.body.appendChild(script);
@@ -270,10 +270,10 @@ export default function SpotifyPlayer({
       await fetch(
         `https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`,
         {
-          method: "PUT",
+          method: 'PUT',
           body: JSON.stringify({ uris: [uri] }),
           headers: {
-            "Content-Type": "application/json",
+            'Content-Type': 'application/json',
             Authorization: `Bearer ${accessToken}`,
           },
         }
@@ -282,9 +282,9 @@ export default function SpotifyPlayer({
       setIsPlaying(true);
       if (onPlayerStateChange) onPlayerStateChange(true);
     } catch (err) {
-      console.error("Error playing track:", err);
-      setError("Error playing track");
-      if (onError) onError("Error playing track");
+      console.error('Error playing track:', err);
+      setError('Error playing track');
+      if (onError) onError('Error playing track');
     }
   };
 
@@ -303,7 +303,7 @@ export default function SpotifyPlayer({
     if (!player) return;
 
     player.nextTrack().then(() => {
-      console.log("Skipped to next track");
+      console.log('Skipped to next track');
     });
   };
 
@@ -312,7 +312,7 @@ export default function SpotifyPlayer({
     if (!player) return;
 
     player.previousTrack().then(() => {
-      console.log("Skipped to previous track");
+      console.log('Skipped to previous track');
     });
   };
 
@@ -382,7 +382,7 @@ export default function SpotifyPlayer({
               className="text-sm opacity-75 line-clamp-1"
               data-testid="current-track-artist"
             >
-              {currentTrack.artists.map((a) => a.name).join(", ")}
+              {currentTrack.artists.map((a) => a.name).join(', ')}
             </p>
           </div>
         </div>

@@ -8,17 +8,23 @@ export default {
     "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
   ],
   theme: {
-    extend: {},
+    extend: {
+      fontFamily: {
+        "patrick-hand": ["var(--font-patrick-hand)", "cursive"],
+      },
+    },
   },
   plugins: [daisyui],
   daisyui: {
-    themes: ["light", "dark"],
-    darkTheme: "dark",
+    themes: ["retro"],
     base: true,
     styled: true,
     utils: true,
     prefix: "",
     logs: true,
     themeRoot: ":root",
+  },
+  experimental: {
+    optimizeUniversalDefaults: true,
   },
 };

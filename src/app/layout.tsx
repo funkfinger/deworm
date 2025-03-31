@@ -1,27 +1,23 @@
-import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
-import "./globals.css";
-import CookieConsent from "./components/CookieConsent";
-import { SessionProvider } from "next-auth/react";
-import Header from "./components/Header";
+import type { Metadata } from 'next';
+import { Patrick_Hand } from 'next/font/google';
+import './globals.css';
+import { SessionProvider } from 'next-auth/react';
+import CookieConsent from './components/CookieConsent';
+import Header from './components/Header';
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
+const patrickHand = Patrick_Hand({
+  weight: '400',
+  variable: '--font-patrick-hand',
+  subsets: ['latin'],
 });
 
 export const metadata: Metadata = {
-  title: "DeWorm - Earworm Cure App",
+  title: 'DeWorm - Earworm Cure App',
   description:
-    "DeWorm helps you get rid of those annoying songs stuck in your head by playing a more catchy replacement song.",
-  keywords: ["earworm", "stuck song", "music", "Spotify", "cure"],
+    'DeWorm helps you get rid of those annoying songs stuck in your head by playing a more catchy replacement song.',
+  keywords: ['earworm', 'stuck song', 'music', 'Spotify', 'cure'],
   icons: {
-    icon: "/favicon.ico",
+    icon: '/favicon.ico',
   },
 };
 
@@ -31,9 +27,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" data-theme="light">
+    <html lang="en" data-theme="retro">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen`}
+        className={`${patrickHand.variable} font-patrick-hand antialiased min-h-screen bg-base-100`}
       >
         <SessionProvider>
           <div className="container mx-auto px-4 py-2 flex flex-col min-h-screen">

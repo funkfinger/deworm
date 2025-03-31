@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import { signIn, signOut } from "next-auth/react";
-import { useSession } from "next-auth/react";
-import type { Session } from "next-auth";
+import type { Session } from 'next-auth';
+import { signIn, signOut } from 'next-auth/react';
+import { useSession } from 'next-auth/react';
 
 // Custom Session type with our properties
 export interface CustomSession extends Session {
@@ -14,7 +14,7 @@ export interface CustomSession extends Session {
  * @returns Promise that resolves when the sign in process is complete
  */
 export const loginWithSpotify = async () => {
-  return signIn("spotify", { callbackUrl: "/" });
+  return signIn('spotify', { callbackUrl: '/' });
 };
 
 /**
@@ -22,7 +22,7 @@ export const loginWithSpotify = async () => {
  * @returns Promise that resolves when the sign out process is complete
  */
 export const logout = async () => {
-  return signOut({ callbackUrl: "/" });
+  return signOut({ callbackUrl: '/' });
 };
 
 /**
@@ -35,7 +35,7 @@ export const useSpotifySession = () => {
 
   return {
     session: customSession,
-    isAuthenticated: status === "authenticated",
-    isLoading: status === "loading",
+    isAuthenticated: status === 'authenticated',
+    isLoading: status === 'loading',
   };
 };

@@ -1,9 +1,8 @@
-"use client";
+'use client';
 
-import Link from "next/link";
-import { useSpotifySession } from "@/app/lib/auth-client";
-import { faHeadphones } from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { useSpotifySession } from '@/app/lib/auth-client';
+import Image from 'next/image';
+import Link from 'next/link';
 
 export default function Header() {
   const { isAuthenticated, isLoading } = useSpotifySession();
@@ -15,8 +14,14 @@ export default function Header() {
           href="/"
           className="flex items-center gap-2 text-2xl font-bold text-primary"
         >
-          <FontAwesomeIcon icon={faHeadphones} />
-          <span>DeWorm</span>
+          <Image
+            src="/images/logo.svg"
+            alt="DeWorm Logo"
+            width={120}
+            height={24}
+            className="h-6 w-auto"
+            priority
+          />
         </Link>
 
         <div>

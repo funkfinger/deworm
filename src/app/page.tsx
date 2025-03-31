@@ -1,14 +1,14 @@
-"use client";
+'use client';
 
-import ChatBubble from "@/app/components/ChatBubble";
-import Mascot from "@/app/components/Mascot";
-import { useSpotifySession } from "@/app/lib/auth-client";
-import { loginWithSpotify, logout } from "@/app/lib/auth-client";
-import { faSpotify } from "@fortawesome/free-brands-svg-icons";
-import { faArrowRight, faSignOut } from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import Link from "next/link";
-import { useState } from "react";
+import ChatBubble from '@/app/components/ChatBubble';
+import Mascot from '@/app/components/Mascot';
+import { useSpotifySession } from '@/app/lib/auth-client';
+import { loginWithSpotify, logout } from '@/app/lib/auth-client';
+import { faSpotify } from '@fortawesome/free-brands-svg-icons';
+import { faArrowRight, faSignOut } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import Link from 'next/link';
+import { useState } from 'react';
 
 export default function Home() {
   const { isAuthenticated, isLoading } = useSpotifySession();
@@ -19,7 +19,7 @@ export default function Home() {
     try {
       await loginWithSpotify();
     } catch (error) {
-      console.error("Login error:", error);
+      console.error('Login error:', error);
       setLoggingIn(false);
     }
   };
@@ -30,52 +30,65 @@ export default function Home() {
 
   // Different message based on authentication state
   const qtMessage = isAuthenticated
-    ? "Oh no you're back! Sure hope it wasn't my fault... Let's get that annoying song out of your dome."
-    : "Oh no I know why you're here. You've got a pesky song stuck in your mellon! Well, I know just what to do. Please log into your Spotify account and we'll take care of that right away!";
+    ? 'Oh no you&apos;re back! Sure hope it wasn&apos;t my fault... Let&apos;s get that annoying song out of your dome.'
+    : 'Oh no I know why you&apos;re here. You&apos;ve got a pesky song stuck in your mellon! Well, I know just what to do. Please log into your Spotify account and we&apos;ll take care of that right away!';
 
   if (isLoading) {
     return (
       <div className="flex justify-center items-center min-h-[60vh]">
-        <span className="loading loading-spinner loading-lg text-primary" />
+        <span className="loading loading-spinner loading-lg" />
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col items-center">
-      <div className="w-full max-w-2xl mx-auto">
-        {/* Mascot with sad mood */}
-        <div className="flex justify-center mb-8">
-          <Mascot mood="sad" size="xl" />
+    <main className="container mx-auto px-4 py-8">
+      <div className="max-w-2xl mx-auto">
+        {/* Hero Section */}
+        <div className="text-center mb-12">
+          <h1 className="text-4xl md:text-5xl font-bold mb-4">
+            Got a song stuck in your head?
+          </h1>
+          <p className="text-xl text-base-content/70 mb-8">
+            Let&apos;s help you get rid of that earworm!
+          </p>
         </div>
 
-        {/* QT's message */}
-        <div className="mb-12">
-          <ChatBubble animate={true}>{qtMessage}</ChatBubble>
+        {/* Mascot Section */}
+        <div className="relative mb-12">
+          <div className="max-w-sm mx-auto">
+            <Mascot mood="sad" size="xl" className="mx-auto mb-8" />
+            <ChatBubble animate={true} className="text-lg">
+              {qtMessage}
+            </ChatBubble>
+          </div>
         </div>
 
-        {/* Action buttons */}
-        <div className="flex flex-col sm:flex-row gap-4 justify-center mt-8">
+        {/* Action Section */}
+        <div className="flex flex-col items-center gap-4 max-w-sm mx-auto">
           {isAuthenticated ? (
             <>
-              <Link href="/earworm-search" className="btn btn-primary btn-lg">
+              <Link
+                href="/earworm-search"
+                className="btn btn-primary btn-lg w-full"
+              >
                 Find my earworm
-                <FontAwesomeIcon icon={faArrowRight} className="ml-2" />
+                <FontAwesomeIcon icon={faArrowRight} />
               </Link>
               <button
                 onClick={handleLogout}
-                className="btn btn-outline btn-lg"
+                className="btn btn-outline btn-lg w-full"
                 type="button"
               >
                 Logout from Spotify
-                <FontAwesomeIcon icon={faSignOut} className="ml-2" />
+                <FontAwesomeIcon icon={faSignOut} />
               </button>
             </>
           ) : (
             <button
               onClick={handleLogin}
               disabled={loggingIn}
-              className="btn btn-primary btn-lg"
+              className="btn btn-primary btn-lg w-full shadow-lg"
               type="button"
             >
               {loggingIn ? (
@@ -86,13 +99,13 @@ export default function Home() {
               ) : (
                 <>
                   Login with Spotify
-                  <FontAwesomeIcon icon={faSpotify} className="ml-2" />
+                  <FontAwesomeIcon icon={faSpotify} />
                 </>
               )}
             </button>
           )}
         </div>
       </div>
-    </div>
+    </main>
   );
 }

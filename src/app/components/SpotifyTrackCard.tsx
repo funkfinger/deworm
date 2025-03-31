@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
-import type { SpotifyTrack } from "@/app/models/spotify";
-import { faMusic, faPause, faPlay } from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { useState } from "react";
+import type { SpotifyTrack } from '@/app/models/spotify';
+import { faMusic, faPause, faPlay } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { useState } from 'react';
 
 interface SpotifyTrackCardProps {
   track: SpotifyTrack;
@@ -21,7 +21,7 @@ export default function SpotifyTrackCard({
   onPlayPause,
   isSelected = false,
   onClick,
-  className = "",
+  className = '',
   showControls = true,
 }: SpotifyTrackCardProps) {
   const [imageError, setImageError] = useState(false);
@@ -29,13 +29,13 @@ export default function SpotifyTrackCard({
   const albumImage = track.album.images[0]?.url;
 
   const formatArtists = (artists: typeof track.artists) => {
-    return artists.map((artist) => artist.name).join(", ");
+    return artists.map((artist) => artist.name).join(', ');
   };
 
   const formatDuration = (ms: number) => {
     const minutes = Math.floor(ms / 60000);
     const seconds = Math.floor((ms % 60000) / 1000);
-    return `${minutes}:${seconds.toString().padStart(2, "0")}`;
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
   };
 
   // This is a card with two interactive elements:
@@ -47,7 +47,7 @@ export default function SpotifyTrackCard({
   return (
     <div
       className={`relative card card-side bg-base-100 shadow-md hover:shadow-lg transition-all cursor-pointer ${
-        isSelected ? "border-2 border-primary" : ""
+        isSelected ? 'border-2 border-primary' : ''
       } ${className}`}
       data-testid="spotify-track-card"
     >
@@ -103,7 +103,7 @@ export default function SpotifyTrackCard({
                 }}
                 type="button"
                 data-testid="play-pause-button"
-                aria-label={isPlaying ? "Pause" : "Play"}
+                aria-label={isPlaying ? 'Pause' : 'Play'}
               >
                 <FontAwesomeIcon icon={isPlaying ? faPause : faPlay} />
               </button>
