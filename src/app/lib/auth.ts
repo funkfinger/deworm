@@ -1,8 +1,8 @@
-import type { JWT } from '@auth/core/jwt';
-import NextAuth from 'next-auth';
-import type { NextAuthConfig } from 'next-auth';
-import type { Session } from 'next-auth';
-import SpotifyProvider from 'next-auth/providers/spotify';
+import type { JWT } from "@auth/core/jwt";
+import NextAuth from "next-auth";
+import type { NextAuthConfig } from "next-auth";
+import type { Session } from "next-auth";
+import SpotifyProvider from "next-auth/providers/spotify";
 
 // Custom Session type with our properties
 interface CustomSession extends Session {
@@ -11,13 +11,13 @@ interface CustomSession extends Session {
 
 // Spotify scopes: https://developer.spotify.com/documentation/general/guides/scopes/
 const scopes = [
-  'user-read-email',
-  'user-read-private',
-  'streaming',
-  'user-read-playback-state',
-  'user-modify-playback-state',
-  'user-read-currently-playing',
-].join(' ');
+  "user-read-email",
+  "user-read-private",
+  "streaming",
+  "user-read-playback-state",
+  "user-modify-playback-state",
+  "user-read-currently-playing",
+].join(" ");
 
 // Custom JWT type with our properties
 interface CustomJWT extends JWT {
@@ -29,10 +29,11 @@ interface CustomJWT extends JWT {
 export const authConfig: NextAuthConfig = {
   providers: [
     SpotifyProvider({
-      clientId: process.env.SPOTIFY_CLIENT_ID || '',
-      clientSecret: process.env.SPOTIFY_CLIENT_SECRET || '',
+      clientId: process.env.SPOTIFY_CLIENT_ID || "",
+      clientSecret: process.env.SPOTIFY_CLIENT_SECRET || "",
       authorization: {
         params: { scope: scopes },
+        url: "https://accounts.spotify.com/authorize",
       },
     }),
   ],
@@ -66,9 +67,9 @@ export const authConfig: NextAuthConfig = {
     },
   },
   pages: {
-    signIn: '/',
-    signOut: '/',
-    error: '/',
+    signIn: "/",
+    signOut: "/",
+    error: "/",
   },
   secret: process.env.NEXTAUTH_SECRET,
 };

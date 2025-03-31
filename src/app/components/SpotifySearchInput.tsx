@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import type { SpotifyTrack } from '@/app/models/spotify';
-import { faSearch, faSpinner } from '@fortawesome/free-solid-svg-icons';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { useEffect, useRef, useState } from 'react';
+import type { SpotifyTrack } from "@/app/models/spotify";
+import { faSearch, faSpinner } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { useEffect, useRef, useState } from "react";
 
 interface SpotifySearchInputProps {
   onSearch: (query: string) => Promise<void>;
@@ -21,8 +21,8 @@ export default function SpotifySearchInput({
   results,
   isLoading = false,
   placeholder = "What's stuck in your noggin?",
-  className = '',
-  initialValue = '',
+  className = "",
+  initialValue = "",
 }: SpotifySearchInputProps) {
   const [query, setQuery] = useState(initialValue);
   const [showResults, setShowResults] = useState(false);
@@ -55,9 +55,9 @@ export default function SpotifySearchInput({
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
 
@@ -139,7 +139,7 @@ export default function SpotifySearchInput({
                   <div className="flex-1 overflow-hidden">
                     <div className="font-medium truncate">{track.name}</div>
                     <div className="text-xs opacity-70 truncate">
-                      {track.artists.map((a) => a.name).join(', ')}
+                      {track.artists.map((a) => a.name).join(", ")}
                     </div>
                   </div>
                 </button>

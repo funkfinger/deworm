@@ -1,10 +1,10 @@
-'use client';
+"use client";
 
-import type { ReactNode } from 'react';
+import type { ReactNode } from "react";
 
 interface ChatBubbleProps {
   children: ReactNode;
-  position?: 'left' | 'right';
+  position?: "left" | "right";
   className?: string;
   isQT?: boolean;
   animate?: boolean;
@@ -12,15 +12,23 @@ interface ChatBubbleProps {
 
 export default function ChatBubble({
   children,
-  position = 'left',
-  className = '',
+  position = "left",
+  className = "",
   isQT = true,
   animate = false,
 }: ChatBubbleProps) {
+  // Convert children to string if needed
+  const content =
+    typeof children === "string"
+      ? children
+      : Array.isArray(children)
+        ? children.join("")
+        : String(children);
+
   return (
     <div
       className={`chat ${
-        position === 'left' ? 'chat-start' : 'chat-end'
+        position === "left" ? "chat-start" : "chat-end"
       } ${className}`}
       data-testid="chat-bubble"
     >
@@ -39,17 +47,16 @@ export default function ChatBubble({
         {isQT && <span className="font-bold">QT</span>}
         <time className="text-xs opacity-50 ml-2">
           {new Date().toLocaleTimeString([], {
-            hour: '2-digit',
-            minute: '2-digit',
+            hour: "2-digit",
+            minute: "2-digit",
           })}
         </time>
       </div>
       <div
-        className={`chat-bubble ${animate ? 'animate-bounce-in' : ''}`}
+        className={`chat-bubble ${animate ? "animate-bounce-in" : ""}`}
         data-testid="chat-bubble-content"
-      >
-        {children}
-      </div>
+        dangerouslySetInnerHTML={{ __html: content }}
+      />
       <div className="chat-footer opacity-50">
         {isQT && <span>Earworm Expert</span>}
       </div>

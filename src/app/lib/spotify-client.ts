@@ -1,11 +1,11 @@
-import { auth } from '@/app/lib/auth';
+import { auth } from "@/app/lib/auth";
 import type {
   SpotifySearchResult,
   SpotifyTrack,
   SpotifyUser,
-} from '@/app/models/spotify';
-import type { Session } from 'next-auth';
-import SpotifyWebApi from 'spotify-web-api-node';
+} from "@/app/models/spotify";
+import type { Session } from "next-auth";
+import SpotifyWebApi from "spotify-web-api-node";
 
 // Extend Session type for TypeScript
 interface CustomSession extends Session {

@@ -1,4 +1,4 @@
-import type { SpotifyTrack } from './spotify';
+import type { SpotifyTrack } from "./spotify";
 
 export interface User {
   id: string;
@@ -26,7 +26,7 @@ export interface UserEarworm {
   userId: string;
   earwormId: string;
   replacementId?: string;
-  status: 'active' | 'cured' | 'failed';
+  status: "active" | "cured" | "failed";
   createdAt: Date;
   updatedAt: Date;
 }
@@ -50,12 +50,12 @@ export interface EarwormSession {
   currentEarworm: SpotifyTrack | null;
   replacementSong: SpotifyTrack | null;
   sessionStatus:
-    | 'idle'
-    | 'searching'
-    | 'found'
-    | 'processing'
-    | 'replacement'
-    | 'feedback';
+    | "idle"
+    | "searching"
+    | "found"
+    | "processing"
+    | "replacement"
+    | "feedback";
 }
 
 export interface EffectivenessData {
