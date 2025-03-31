@@ -76,6 +76,23 @@ The database keeps a record of users' earworm history and replacement songs, wit
 - **Source Code Control**: GitHub
 - **Source Code Commit Hooks**: Husky
 
+### Node.js Version Management
+
+This project uses [Node Version Manager (NVM)](https://github.com/nvm-sh/nvm) to ensure consistent Node.js versions across development environments.
+
+- **Node.js Version**: v22.14.0 (LTS)
+- **NVM Configuration**: Included in `.nvmrc` file
+
+To use the correct Node.js version with NVM:
+
+```bash
+# Install the correct version (if not already installed)
+nvm install
+
+# Use the version specified in .nvmrc
+nvm use
+```
+
 #### TypeScript / React / Next.js
 
 - Enable strict mode (`strict: true` in tsconfig.json)
@@ -163,7 +180,7 @@ Wireframe example can be viewed here: https://www.figma.com/design/nARkpaeQ6wIhW
 > NOTE: Earworm song should continue playing
 
 - Happy Mascot
-- daisyUI Chat Bubble Text - "HERE IT IS! I’ve found your CURE!!!"
+- daisyUI Chat Bubble Text - "HERE IT IS! I've found your CURE!!!"
 - daisyUI card with
   - Spotify album art
   - song title

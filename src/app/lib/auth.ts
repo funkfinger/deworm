@@ -33,6 +33,7 @@ export const authConfig: NextAuthConfig = {
       clientSecret: process.env.SPOTIFY_CLIENT_SECRET || "",
       authorization: {
         params: { scope: scopes },
+        url: "https://accounts.spotify.com/authorize",
       },
     }),
   ],

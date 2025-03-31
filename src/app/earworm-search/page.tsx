@@ -36,7 +36,7 @@ export default function EarwormSearchPage() {
         {/* QT's message */}
         <div className="mb-12">
           <ChatBubble animate={true}>
-            Great! Now lets find that nasty ear worm...
+            Great! Now let&apos;s find that nasty ear worm...
           </ChatBubble>
         </div>
 

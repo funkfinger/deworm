@@ -17,6 +17,14 @@ export default function ChatBubble({
   isQT = true,
   animate = false,
 }: ChatBubbleProps) {
+  // Convert children to string if needed
+  const content =
+    typeof children === "string"
+      ? children
+      : Array.isArray(children)
+        ? children.join("")
+        : String(children);
+
   return (
     <div
       className={`chat ${
@@ -47,9 +55,8 @@ export default function ChatBubble({
       <div
         className={`chat-bubble ${animate ? "animate-bounce-in" : ""}`}
         data-testid="chat-bubble-content"
-      >
-        {children}
-      </div>
+        dangerouslySetInnerHTML={{ __html: content }}
+      />
       <div className="chat-footer opacity-50">
         {isQT && <span>Earworm Expert</span>}
       </div>
