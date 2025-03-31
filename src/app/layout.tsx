@@ -1,23 +1,23 @@
-import type { Metadata } from 'next';
-import { Patrick_Hand } from 'next/font/google';
-import './globals.css';
-import { SessionProvider } from 'next-auth/react';
-import CookieConsent from './components/CookieConsent';
-import Header from './components/Header';
+import type { Metadata } from "next";
+import { Patrick_Hand } from "next/font/google";
+import "./globals.css";
+import { SessionProvider } from "next-auth/react";
+import CookieConsent from "./components/CookieConsent";
+import Header from "./components/Header";
 
 const patrickHand = Patrick_Hand({
-  weight: '400',
-  variable: '--font-patrick-hand',
-  subsets: ['latin'],
+  weight: "400",
+  variable: "--font-patrick-hand",
+  subsets: ["latin"],
 });
 
 export const metadata: Metadata = {
-  title: 'DeWorm - Earworm Cure App',
+  title: "DeWorm - Earworm Cure App",
   description:
-    'DeWorm helps you get rid of those annoying songs stuck in your head by playing a more catchy replacement song.',
-  keywords: ['earworm', 'stuck song', 'music', 'Spotify', 'cure'],
+    "DeWorm helps you get rid of those annoying songs stuck in your head by playing a more catchy replacement song.",
+  keywords: ["earworm", "stuck song", "music", "Spotify", "cure"],
   icons: {
-    icon: '/favicon.ico',
+    icon: "/favicon.ico",
   },
 };
 

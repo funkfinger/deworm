@@ -1,14 +1,14 @@
-'use client';
+"use client";
 
-import ChatBubble from '@/app/components/ChatBubble';
-import Mascot from '@/app/components/Mascot';
-import { useSpotifySession } from '@/app/lib/auth-client';
-import { loginWithSpotify, logout } from '@/app/lib/auth-client';
-import { faSpotify } from '@fortawesome/free-brands-svg-icons';
-import { faArrowRight, faSignOut } from '@fortawesome/free-solid-svg-icons';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import Link from 'next/link';
-import { useState } from 'react';
+import ChatBubble from "@/app/components/ChatBubble";
+import Mascot from "@/app/components/Mascot";
+import { useSpotifySession } from "@/app/lib/auth-client";
+import { loginWithSpotify, logout } from "@/app/lib/auth-client";
+import { faSpotify } from "@fortawesome/free-brands-svg-icons";
+import { faArrowRight, faSignOut } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import Link from "next/link";
+import { useState } from "react";
 
 export default function Home() {
   const { isAuthenticated, isLoading } = useSpotifySession();
@@ -19,7 +19,7 @@ export default function Home() {
     try {
       await loginWithSpotify();
     } catch (error) {
-      console.error('Login error:', error);
+      console.error("Login error:", error);
       setLoggingIn(false);
     }
   };
@@ -30,8 +30,8 @@ export default function Home() {
 
   // Different message based on authentication state
   const qtMessage = isAuthenticated
-    ? 'Oh no you&apos;re back! Sure hope it wasn&apos;t my fault... Let&apos;s get that annoying song out of your dome.'
-    : 'Oh no I know why you&apos;re here. You&apos;ve got a pesky song stuck in your mellon! Well, I know just what to do. Please log into your Spotify account and we&apos;ll take care of that right away!';
+    ? "Oh no you&apos;re back! Sure hope it wasn&apos;t my fault... Let&apos;s get that annoying song out of your dome."
+    : "Oh no I know why you&apos;re here. You&apos;ve got a pesky song stuck in your mellon! Well, I know just what to do. Please log into your Spotify account and we&apos;ll take care of that right away!";
 
   if (isLoading) {
     return (

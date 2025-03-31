@@ -1,10 +1,10 @@
-'use client';
+"use client";
 
-import ChatBubble from '@/app/components/ChatBubble';
-import Mascot from '@/app/components/Mascot';
-import { useSpotifySession } from '@/app/lib/auth-client';
-import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import ChatBubble from "@/app/components/ChatBubble";
+import Mascot from "@/app/components/Mascot";
+import { useSpotifySession } from "@/app/lib/auth-client";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 
 export default function EarwormSearchPage() {
   const { isAuthenticated, isLoading } = useSpotifySession();
@@ -13,7 +13,7 @@ export default function EarwormSearchPage() {
   // Redirect to home if not authenticated
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
-      router.push('/');
+      router.push("/");
     }
   }, [isAuthenticated, isLoading, router]);
 
@@ -51,7 +51,7 @@ export default function EarwormSearchPage() {
             <div className="card-actions justify-end mt-4">
               <button
                 className="btn btn-primary"
-                onClick={() => router.push('/')}
+                onClick={() => router.push("/")}
                 type="button"
               >
                 Back to Home
