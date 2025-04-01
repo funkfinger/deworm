@@ -15,7 +15,7 @@ export default function Header() {
           className="flex items-center gap-2 text-2xl font-bold text-primary"
         >
           <Image
-            src="/images/deworm-logo.png"
+            src="/images/logo.svg"
             alt="DeWorm Logo"
             width={150}
             height={50}

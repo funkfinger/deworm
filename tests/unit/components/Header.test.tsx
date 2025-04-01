@@ -44,7 +44,7 @@ describe("Header Component", () => {
     const logo = screen.getByTestId("next-image");
     expect(logo).toBeInTheDocument();
     expect(logo).toHaveAttribute("alt", "DeWorm Logo");
-    expect(logo).toHaveAttribute("src", "/images/deworm-logo.png");
+    expect(logo).toHaveAttribute("src", "/images/logo.svg");
   });
 
   it("should display a loading spinner when session is loading", () => {
