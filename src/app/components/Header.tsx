@@ -8,11 +8,11 @@ export default function Header() {
   const { isAuthenticated, isLoading } = useSpotifySession();
 
   return (
-    <header className="py-4 mb-8 bg-accent text-accent-content">
+    <header className="py-4 mb-8 bg-base-300 text-base-content">
       <div className="flex items-center justify-center">
         <Link
           href="/"
-          className="flex items-center gap-2 text-2xl font-bold text-accent-content"
+          className="flex items-center gap-2 text-2xl font-bold text-base-content"
         >
           <Image
             src="/images/logo.svg"
