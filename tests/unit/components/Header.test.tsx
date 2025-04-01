@@ -12,10 +12,8 @@ vi.mock("@/app/lib/auth-client", () => ({
 // Mock next/image
 vi.mock("next/image", () => ({
   default: vi.fn(({ src, alt, ...props }) => {
-    // Ensure alt text is provided for accessibility
-    if (!alt) {
-      console.warn("Missing alt text for image");
-    }
+    // Mock next/image component for testing
+    // biome-ignore lint/a11y/useAltText: This is a test mock that already handles alt text through props
     return (
       <img src={src} alt={alt || ""} {...props} data-testid="next-image" />
     );

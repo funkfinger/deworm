@@ -169,7 +169,9 @@ class MockPlayer implements SpotifyPlayerInstance {
 
   triggerEvent(eventName: string, state: SpotifyState): void {
     if (this.listeners[eventName]) {
-      this.listeners[eventName].forEach((callback) => callback(state));
+      for (const callback of this.listeners[eventName]) {
+        callback(state);
+      }
     }
   }
 }
