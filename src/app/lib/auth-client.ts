@@ -14,7 +14,7 @@ export interface CustomSession extends Session {
  * @returns Promise that resolves when the sign in process is complete
  */
 export const loginWithSpotify = async () => {
-  return signIn("spotify", { callbackUrl: "/" });
+  return signIn("spotify", { callbackUrl: "/earworm-search" });
 };
 
 /**
