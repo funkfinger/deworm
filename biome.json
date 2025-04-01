@@ -3,6 +3,10 @@
   "organizeImports": {
     "enabled": true
   },
+  "files": {
+    "maxSize": 10000000,
+    "ignore": [".next/**/*", "tests/coverage/**/*"]
+  },
   "linter": {
     "enabled": true,
     "rules": {
@@ -13,7 +17,8 @@
       "security": {
         "noDangerouslySetInnerHtml": "off"
       }
-    }
+    },
+    "ignore": [".next/**/*", "tests/coverage/**/*"]
   },
   "formatter": {
     "enabled": true,
@@ -21,7 +26,8 @@
     "indentStyle": "space",
     "indentWidth": 2,
     "lineWidth": 80,
-    "lineEnding": "lf"
+    "lineEnding": "lf",
+    "ignore": [".next/**/*", "tests/coverage/**/*"]
   },
   "javascript": {
     "formatter": {

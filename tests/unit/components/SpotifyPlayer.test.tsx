@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, fireEvent, act } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import "@testing-library/jest-dom";
 import SpotifyPlayer from "@/app/components/SpotifyPlayer";
 
@@ -34,85 +34,142 @@ const mockTrack = {
   preview_url: "https://test-preview-url.com",
 };
 
-// Types for Spotify Player callbacks
-interface SpotifyCallbackData {
-  device_id?: string;
-  paused?: boolean;
-  position?: number;
-  track_window?: {
-    current_track: {
-      id: string;
-      uri: string;
-      name: string;
-      duration_ms: number;
-      artists: Array<{
-        uri: string;
-        name: string;
-      }>;
-      album: {
-        uri: string;
-        name: string;
-        images: Array<{ url: string; height: number; width: number }>;
-      };
-    };
-  };
-  [key: string]: unknown;
+interface SpotifyPlayerOptions {
+  name: string;
+  getOAuthToken: (cb: (token: string) => void) => void;
+  volume: number;
 }
 
-type SpotifyCallback = (data: SpotifyCallbackData) => void;
-
-// Define type for global Spotify object
-interface SpotifyPlayer {
-  Player: (options: Record<string, unknown>) => MockPlayer;
-  lastOptions?: Record<string, unknown>;
+interface SpotifyPlayerInstance {
+  connect(): Promise<boolean>;
+  disconnect(): Promise<void>;
+  addListener(eventName: string, callback: (state: SpotifyState) => void): void;
+  removeListener(
+    eventName: string,
+    callback: (state: SpotifyState) => void
+  ): void;
+  togglePlay(): Promise<void>;
+  nextTrack(): Promise<void>;
+  previousTrack(): Promise<void>;
+  setVolume(volume: number): Promise<void>;
 }
 
-// Extending the global Window object
+// Extend the Window interface
 declare global {
+  // eslint-disable-next-line no-unused-vars
   interface Window {
-    Spotify?: SpotifyPlayer;
+    Spotify?: {
+      Player: new (options: SpotifyPlayerOptions) => SpotifyPlayerInstance;
+    };
     onSpotifyWebPlaybackSDKReady?: () => void;
   }
 }
 
-// For direct access to global
-interface GlobalWithSpotify extends NodeJS.Global {
-  Spotify?: SpotifyPlayer;
-  onSpotifyWebPlaybackSDKReady?: () => void;
+interface SpotifyState {
+  track_window?: {
+    current_track?: {
+      id?: string;
+      name: string;
+      artists: { name: string; uri?: string }[];
+      uri?: string;
+      duration_ms?: number;
+      album?: {
+        name?: string;
+        uri?: string;
+        images?: { url: string }[];
+      };
+    };
+  };
+  paused?: boolean;
+  device_id?: string;
+  position?: number;
 }
 
-// Mock the Spotify SDK
-class MockPlayer {
-  callbacks: Record<string, SpotifyCallback> = {};
-  connected = false;
+class MockPlayer implements SpotifyPlayerInstance {
+  private connected = false;
+  private volume = 1;
+  private deviceId = "device-123";
+  private listeners: { [key: string]: ((state: SpotifyState) => void)[] } = {};
 
-  connect = vi.fn().mockImplementation(() => {
+  constructor() {
+    this.connect = vi.fn(
+      this.connect.bind(this)
+    ) as unknown as typeof this.connect;
+    this.disconnect = vi.fn(
+      this.disconnect.bind(this)
+    ) as unknown as typeof this.disconnect;
+    this.addListener = vi.fn(
+      this.addListener.bind(this)
+    ) as unknown as typeof this.addListener;
+    this.removeListener = vi.fn(
+      this.removeListener.bind(this)
+    ) as unknown as typeof this.removeListener;
+    this.togglePlay = vi.fn(
+      this.togglePlay.bind(this)
+    ) as unknown as typeof this.togglePlay;
+    this.nextTrack = vi.fn(
+      this.nextTrack.bind(this)
+    ) as unknown as typeof this.nextTrack;
+    this.previousTrack = vi.fn(
+      this.previousTrack.bind(this)
+    ) as unknown as typeof this.previousTrack;
+    this.setVolume = vi.fn(
+      this.setVolume.bind(this)
+    ) as unknown as typeof this.setVolume;
+  }
+
+  connect(): Promise<boolean> {
     this.connected = true;
+    console.log("The Web Playback SDK successfully connected to Spotify!");
     return Promise.resolve(true);
-  });
+  }
 
-  disconnect = vi.fn();
+  disconnect(): Promise<void> {
+    this.connected = false;
+    return Promise.resolve();
+  }
 
-  addListener = vi
-    .fn()
-    .mockImplementation((event: string, callback: SpotifyCallback) => {
-      this.callbacks[event] = callback;
-    });
+  addListener(
+    eventName: string,
+    callback: (state: SpotifyState) => void
+  ): void {
+    if (!this.listeners[eventName]) {
+      this.listeners[eventName] = [];
+    }
+    this.listeners[eventName].push(callback);
+  }
 
-  removeListener = vi.fn();
+  removeListener(
+    eventName: string,
+    callback: (state: SpotifyState) => void
+  ): void {
+    if (this.listeners[eventName]) {
+      this.listeners[eventName] = this.listeners[eventName].filter(
+        (cb) => cb !== callback
+      );
+    }
+  }
 
-  togglePlay = vi.fn().mockResolvedValue(undefined);
+  togglePlay(): Promise<void> {
+    return Promise.resolve();
+  }
 
-  nextTrack = vi.fn().mockResolvedValue(undefined);
+  nextTrack(): Promise<void> {
+    return Promise.resolve();
+  }
 
-  previousTrack = vi.fn().mockResolvedValue(undefined);
+  previousTrack(): Promise<void> {
+    return Promise.resolve();
+  }
 
-  setVolume = vi.fn().mockResolvedValue(undefined);
+  setVolume(volume: number): Promise<void> {
+    this.volume = volume;
+    return Promise.resolve();
+  }
 
-  // Helper to trigger events for testing
-  triggerEvent(eventName: string, data: SpotifyCallbackData) {
-    if (this.callbacks[eventName]) {
-      this.callbacks[eventName](data);
+  triggerEvent(eventName: string, state: SpotifyState): void {
+    if (this.listeners[eventName]) {
+      this.listeners[eventName].forEach((callback) => callback(state));
     }
   }
 }
@@ -124,17 +181,26 @@ describe("SpotifyPlayer Component", () => {
   beforeEach(() => {
     mockSpotifyPlayer = new MockPlayer();
 
-    // Mock the global Spotify object
-    (global as ExtendedGlobal).Spotify = {
+    // Reset the mock
+    vi.resetAllMocks();
+
+    // Mock the Spotify SDK
+    // @ts-expect-error - Global Spotify mock for testing
+    global.Spotify = {
       Player: vi.fn().mockImplementation((options) => {
         // Store the options for later assertions
-        (global as ExtendedGlobal).Spotify!.lastOptions = options;
+        // @ts-expect-error - Global Spotify mock for testing
+        if (global.Spotify) {
+          // @ts-expect-error - Global Spotify mock for testing
+          global.Spotify.lastOptions = options;
+        }
         return mockSpotifyPlayer;
       }),
     };
 
     // Mock the window.onSpotifyWebPlaybackSDKReady callback
-    (global as ExtendedGlobal).onSpotifyWebPlaybackSDKReady = null;
+    // @ts-expect-error - Global callback mock for testing
+    global.onSpotifyWebPlaybackSDKReady = undefined;
 
     // Mock document.createElement for the script tag
     const originalCreateElement = document.createElement;
@@ -143,8 +209,10 @@ describe("SpotifyPlayer Component", () => {
         const scriptElement = originalCreateElement.call(document, tagName);
         // Mock the script loading by triggering the callback immediately
         setTimeout(() => {
-          if ((global as ExtendedGlobal).onSpotifyWebPlaybackSDKReady) {
-            (global as ExtendedGlobal).onSpotifyWebPlaybackSDKReady();
+          // @ts-expect-error - Global callback mock for testing
+          if (global.onSpotifyWebPlaybackSDKReady) {
+            // @ts-expect-error - Global callback mock for testing
+            global.onSpotifyWebPlaybackSDKReady();
           }
         }, 0);
         return scriptElement;
@@ -160,13 +228,16 @@ describe("SpotifyPlayer Component", () => {
 
     // Force the onSpotifyWebPlaybackSDKReady callback to be triggered
     await act(async () => {
-      if ((global as ExtendedGlobal).onSpotifyWebPlaybackSDKReady) {
-        (global as ExtendedGlobal).onSpotifyWebPlaybackSDKReady();
+      // @ts-expect-error - Global callback mock for testing
+      if (global.onSpotifyWebPlaybackSDKReady) {
+        // @ts-expect-error - Global callback mock for testing
+        global.onSpotifyWebPlaybackSDKReady();
       }
     });
 
     // Wait for the player to be initialized
-    expect((global as ExtendedGlobal).Spotify!.Player).toHaveBeenCalledWith({
+    // @ts-expect-error - Global Spotify mock for testing
+    expect(global.Spotify?.Player).toHaveBeenCalledWith({
       name: "DeWorm Web Player",
       getOAuthToken: expect.any(Function),
       volume: 0.5, // Default volume is 50%
@@ -184,8 +255,10 @@ describe("SpotifyPlayer Component", () => {
 
     // Force the onSpotifyWebPlaybackSDKReady callback to be triggered
     await act(async () => {
-      if ((global as ExtendedGlobal).onSpotifyWebPlaybackSDKReady) {
-        (global as ExtendedGlobal).onSpotifyWebPlaybackSDKReady();
+      // @ts-expect-error - Global callback mock for testing
+      if (global.onSpotifyWebPlaybackSDKReady) {
+        // @ts-expect-error - Global callback mock for testing
+        global.onSpotifyWebPlaybackSDKReady();
       }
     });
 
@@ -243,8 +316,10 @@ describe("SpotifyPlayer Component", () => {
 
     // Force the onSpotifyWebPlaybackSDKReady callback to be triggered
     await act(async () => {
-      if ((global as ExtendedGlobal).onSpotifyWebPlaybackSDKReady) {
-        (global as ExtendedGlobal).onSpotifyWebPlaybackSDKReady();
+      // @ts-expect-error - Global callback mock for testing
+      if (global.onSpotifyWebPlaybackSDKReady) {
+        // @ts-expect-error - Global callback mock for testing
+        global.onSpotifyWebPlaybackSDKReady();
       }
     });
 
@@ -332,8 +407,10 @@ describe("SpotifyPlayer Component", () => {
 
     // Force the onSpotifyWebPlaybackSDKReady callback to be triggered
     await act(async () => {
-      if ((global as ExtendedGlobal).onSpotifyWebPlaybackSDKReady) {
-        (global as ExtendedGlobal).onSpotifyWebPlaybackSDKReady();
+      // @ts-expect-error - Global callback mock for testing
+      if (global.onSpotifyWebPlaybackSDKReady) {
+        // @ts-expect-error - Global callback mock for testing
+        global.onSpotifyWebPlaybackSDKReady();
       }
     });
 

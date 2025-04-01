@@ -15,12 +15,12 @@ export default function Header() {
           className="flex items-center gap-2 text-2xl font-bold text-primary"
         >
           <Image
-            src="/images/logo.svg"
+            src="/images/deworm-logo.png"
             alt="DeWorm Logo"
-            width={120}
-            height={24}
-            className="h-6 w-auto"
-            priority
+            width={150}
+            height={50}
+            priority={true}
+            className="dark:invert"
           />
         </Link>
 

@@ -1,7 +1,7 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { NextRequest } from "next/server";
 import { GET } from "@/app/api/spotify/search/route";
 import type { SpotifyClient } from "@/app/lib/spotify-client";
+import { NextRequest } from "next/server";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock the getAuthenticatedSpotifyClient function
 vi.mock("@/app/lib/spotify-client", () => ({

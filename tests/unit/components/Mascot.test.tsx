@@ -1,7 +1,7 @@
-import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
 import "@testing-library/jest-dom";
-import Mascot, { MascotMood } from "@/app/components/Mascot";
+import Mascot, { type MascotMood } from "@/app/components/Mascot";
 
 // Mock FontAwesome
 vi.mock("@fortawesome/react-fontawesome", () => ({
@@ -39,12 +39,12 @@ describe("Mascot Component", () => {
       "loading",
     ];
 
-    moods.forEach((mood) => {
+    for (const mood of moods) {
       render(<Mascot mood={mood} />);
       expect(
         screen.getByAltText(`QT mascot feeling ${mood}`)
       ).toBeInTheDocument();
-    });
+    }
   });
 
   it("should apply animation classes when animate is true", () => {

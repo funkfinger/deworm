@@ -22,8 +22,8 @@ export default function ChatBubble({
     typeof children === "string"
       ? children
       : Array.isArray(children)
-      ? children.join("")
-      : String(children);
+        ? children.join("")
+        : String(children);
 
   return (
     <div

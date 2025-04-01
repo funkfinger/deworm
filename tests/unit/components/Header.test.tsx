@@ -1,5 +1,5 @@
-import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
 import "@testing-library/jest-dom";
 import Header from "@/app/components/Header";
 import type { Session } from "next-auth";
@@ -11,9 +11,15 @@ vi.mock("@/app/lib/auth-client", () => ({
 
 // Mock next/image
 vi.mock("next/image", () => ({
-  default: vi.fn(({ src, alt, ...props }) => (
-    <img src={src} alt={alt} {...props} data-testid="next-image" />
-  )),
+  default: vi.fn(({ src, alt, ...props }) => {
+    // Ensure alt text is provided for accessibility
+    if (!alt) {
+      console.warn("Missing alt text for image");
+    }
+    return (
+      <img src={src} alt={alt || ""} {...props} data-testid="next-image" />
+    );
+  }),
 }));
 
 // Mock next/link
@@ -40,7 +46,7 @@ describe("Header Component", () => {
     const logo = screen.getByTestId("next-image");
     expect(logo).toBeInTheDocument();
     expect(logo).toHaveAttribute("alt", "DeWorm Logo");
-    expect(logo).toHaveAttribute("src", "/images/logo.svg");
+    expect(logo).toHaveAttribute("src", "/images/deworm-logo.png");
   });
 
   it("should display a loading spinner when session is loading", () => {

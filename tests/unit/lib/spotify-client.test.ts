@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
 import { SpotifyClient } from "@/app/lib/spotify-client";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock auth.ts module to avoid the next-auth dependency issue
 vi.mock("@/app/lib/auth", () => ({

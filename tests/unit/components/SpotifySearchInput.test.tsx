@@ -1,8 +1,8 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import "@testing-library/jest-dom";
 import SpotifySearchInput from "@/app/components/SpotifySearchInput";
-import { SpotifyTrack } from "@/app/models/spotify";
+import type { SpotifyTrack } from "@/app/models/spotify";
 
 // Mock FontAwesome
 vi.mock("@fortawesome/react-fontawesome", () => ({

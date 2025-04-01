@@ -1,11 +1,11 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import * as dbModule from "../../../src/app/lib/db";
-import {
+import type {
   Earworm,
+  EffectivenessData,
+  ReplacementSong,
   User,
   UserEarworm,
-  ReplacementSong,
-  EffectivenessData,
 } from "../../../src/app/models/app";
 
 // Create mock test data
