@@ -26,7 +26,10 @@ export default function Header() {
 
         <div>
           {isLoading ? (
-            <span className="loading loading-spinner loading-sm" />
+            <span
+              className="loading loading-spinner loading-sm"
+              data-testid="loading-spinner"
+            />
           ) : isAuthenticated ? (
             <span className="badge badge-primary">Spotify Connected</span>
           ) : null}

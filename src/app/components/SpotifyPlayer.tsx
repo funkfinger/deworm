@@ -15,10 +15,10 @@ import { useCallback, useEffect, useState } from "react";
 // Define the SDK Player object
 declare global {
   interface Window {
-    Spotify: {
+    Spotify?: {
       Player: new (options: SpotifyPlayerOptions) => SpotifyPlayerInstance;
     };
-    onSpotifyWebPlaybackSDKReady: () => void;
+    onSpotifyWebPlaybackSDKReady?: () => void;
   }
 }
 
@@ -114,6 +114,12 @@ export default function SpotifyPlayer({
 
   // Initialize the player
   const initializePlayer = useCallback(() => {
+    if (!window.Spotify) {
+      console.error("Spotify SDK not loaded");
+      setError("Spotify SDK not loaded");
+      return;
+    }
+
     const newPlayer = new window.Spotify.Player({
       name: "DeWorm Web Player",
       getOAuthToken: (cb: (token: string) => void) => cb(accessToken),
@@ -318,19 +324,23 @@ export default function SpotifyPlayer({
 
   // Volume Control
   const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newVolume = Number.parseInt(e.target.value);
+    const newVolume = Number(e.target.value);
     setVolume(newVolume);
-
     if (player) {
-      player.setVolume(newVolume / 100).then(() => {
-        console.log(`Volume set to ${newVolume}%`);
+      player.setVolume(newVolume / 100).catch((error) => {
+        console.error("Error setting volume:", error);
+        setError(`Error setting volume: ${error}`);
       });
     }
 
-    // If volume was 0 and now it's not, update mute state
-    if (newVolume > 0 && isMuted) {
+    // If volume was zero and now it's not, unmute
+    if (isMuted && newVolume > 0) {
       setIsMuted(false);
-    } else if (newVolume === 0 && !isMuted) {
+    }
+
+    // If volume is being set to zero, consider it as muting
+    if (newVolume === 0 && !isMuted) {
+      setPreviousVolume(volume);
       setIsMuted(true);
     }
   };
@@ -356,106 +366,96 @@ export default function SpotifyPlayer({
   };
 
   return (
-    <div
-      className={`p-4 rounded-lg bg-base-200 ${className}`}
-      data-testid="spotify-player"
-    >
-      {/* Current Track Display */}
-      {currentTrack && (
-        <div className="flex items-center mb-4">
-          {currentTrack.album.images[0] && (
-            <img
-              src={currentTrack.album.images[0].url}
-              alt={`${currentTrack.name} album cover`}
-              className="w-16 h-16 rounded mr-4"
-              data-testid="current-track-image"
-            />
-          )}
-          <div>
-            <h3
-              className="text-lg font-bold line-clamp-1"
-              data-testid="current-track-name"
-            >
-              {currentTrack.name}
-            </h3>
-            <p
-              className="text-sm opacity-75 line-clamp-1"
-              data-testid="current-track-artist"
-            >
-              {currentTrack.artists.map((a) => a.name).join(", ")}
-            </p>
-          </div>
-        </div>
-      )}
-
-      {/* Player Controls */}
-      <div className="flex items-center justify-center space-x-4">
-        <button
-          className="btn btn-circle btn-outline"
-          onClick={handlePrevious}
-          disabled={!isReady}
-          type="button"
-          data-testid="previous-button"
-        >
-          <FontAwesomeIcon icon={faBackward} />
-        </button>
-
-        <button
-          className="btn btn-circle btn-primary"
-          onClick={handlePlayPause}
-          disabled={!isReady || !currentTrack}
-          type="button"
-          data-testid="play-pause-button"
-        >
-          <FontAwesomeIcon icon={isPlaying ? faPause : faPlay} />
-        </button>
-
-        <button
-          className="btn btn-circle btn-outline"
-          onClick={handleNext}
-          disabled={!isReady}
-          type="button"
-          data-testid="next-button"
-        >
-          <FontAwesomeIcon icon={faForward} />
-        </button>
-      </div>
-
-      {/* Volume Control */}
-      <div className="mt-4 flex items-center space-x-2">
-        <button
-          className="btn btn-sm btn-ghost btn-circle"
-          onClick={handleMuteToggle}
-          type="button"
-          data-testid="mute-button"
-        >
-          <FontAwesomeIcon icon={isMuted ? faVolumeMute : faVolumeHigh} />
-        </button>
-
-        <input
-          type="range"
-          min="0"
-          max="100"
-          value={volume}
-          onChange={handleVolumeChange}
-          className="range range-xs range-primary"
-          data-testid="volume-slider"
-        />
-      </div>
-
-      {/* Error Display */}
+    <div className={`card bg-base-100 shadow-xl overflow-hidden ${className}`}>
+      {/* Player content */}
       {error && (
-        <div className="mt-4 text-error text-sm" data-testid="player-error">
-          {error}
+        <div className="alert alert-error">
+          <p>{error}</p>
         </div>
       )}
 
-      {/* Player Status */}
+      {/* Loading state */}
       {!isReady && !error && (
-        <div className="mt-4 text-center">
-          <span className="loading loading-spinner loading-md" />
-          <p className="text-sm mt-2">Connecting to Spotify...</p>
+        <div className="flex justify-center items-center p-8">
+          <span className="loading loading-spinner loading-lg" />
         </div>
+      )}
+
+      {/* Player interface when ready */}
+      {isReady && currentTrack && (
+        <>
+          {/* Track info */}
+          <div className="flex items-center p-4 gap-4">
+            {currentTrack.album.images?.[0]?.url && (
+              <img
+                src={currentTrack.album.images[0].url}
+                alt={`${currentTrack.album.name} album cover`}
+                className="w-16 h-16 rounded-lg shadow-md"
+              />
+            )}
+            <div className="flex-grow">
+              <h3 className="font-bold">{currentTrack.name}</h3>
+              <p className="text-sm opacity-70">
+                {currentTrack.artists.map((a) => a.name).join(", ")}
+              </p>
+            </div>
+          </div>
+
+          {/* Player controls */}
+          <div className="flex justify-between items-center p-4">
+            <div className="flex items-center justify-center gap-4">
+              <button
+                onClick={handlePrevious}
+                className="btn btn-circle btn-sm"
+                aria-label="Previous track"
+                type="button"
+              >
+                <FontAwesomeIcon icon={faBackward} />
+              </button>
+
+              <button
+                onClick={handlePlayPause}
+                className="btn btn-circle btn-primary"
+                aria-label={isPlaying ? "Pause" : "Play"}
+                data-testid="playPauseButton"
+                type="button"
+              >
+                <FontAwesomeIcon icon={isPlaying ? faPause : faPlay} />
+              </button>
+
+              <button
+                onClick={handleNext}
+                className="btn btn-circle btn-sm"
+                aria-label="Next track"
+                type="button"
+              >
+                <FontAwesomeIcon icon={faForward} />
+              </button>
+            </div>
+
+            {/* Volume control */}
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleMuteToggle}
+                className="btn btn-circle btn-sm"
+                aria-label={isMuted ? "Unmute" : "Mute"}
+                type="button"
+              >
+                <FontAwesomeIcon icon={isMuted ? faVolumeMute : faVolumeHigh} />
+              </button>
+              <input
+                type="range"
+                min="0"
+                max="100"
+                value={isMuted ? 0 : volume}
+                onChange={handleVolumeChange}
+                className="range range-xs range-primary max-w-24"
+                aria-label="Volume"
+                data-testid="volumeSlider"
+              />
+            </div>
+          </div>
+        </>
       )}
     </div>
   );

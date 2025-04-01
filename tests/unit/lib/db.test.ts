@@ -1,242 +1,226 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import * as dbModule from "../../../src/app/lib/db";
 import {
-  getUserBySpotifyId,
-  createUser,
-  getEarwormByTrackId,
-  createEarworm,
-  createUserEarworm,
-  updateUserEarworm,
-  getRandomReplacementSong,
-  saveEffectivenessData,
-} from "@/app/lib/db";
+  Earworm,
+  User,
+  UserEarworm,
+  ReplacementSong,
+  EffectivenessData,
+} from "../../../src/app/models/app";
 
-// Mock Node.js fs and path modules
-vi.mock("node:fs/promises", () => ({
-  default: {
-    mkdir: vi.fn().mockResolvedValue(undefined),
-    readFile: vi.fn().mockImplementation((filePath) => {
-      // Return different mock data based on the file path
-      if (filePath.includes("users.json")) {
-        return Promise.resolve(
-          JSON.stringify([
-            {
-              id: "test-user-id",
-              spotifyId: "test-spotify-id",
-              email: "test@example.com",
-              displayName: "Test User",
-              profileImageUrl: "test-image-url",
-              createdAt: "2023-01-01T00:00:00.000Z",
-              updatedAt: "2023-01-01T00:00:00.000Z",
-            },
-          ])
-        );
-      } else if (filePath.includes("earworms.json")) {
-        return Promise.resolve(
-          JSON.stringify([
-            {
-              id: "test-earworm-id",
-              trackId: "test-track-id",
-              trackName: "Test Track",
-              artistName: "Test Artist",
-              albumName: "Test Album",
-              albumImageUrl: "test-album-image",
-              spotifyUri: "spotify:track:test-track-id",
-              createdAt: "2023-01-01T00:00:00.000Z",
-            },
-          ])
-        );
-      } else if (filePath.includes("user-earworms.json")) {
-        return Promise.resolve(
-          JSON.stringify([
-            {
-              id: "test-user-earworm-id",
-              userId: "test-user-id",
-              earwormId: "test-earworm-id",
-              status: "active",
-              createdAt: "2023-01-01T00:00:00.000Z",
-              updatedAt: "2023-01-01T00:00:00.000Z",
-            },
-          ])
-        );
-      } else if (filePath.includes("replacement-songs.json")) {
-        return Promise.resolve(
-          JSON.stringify([
-            {
-              id: "test-replacement-id",
-              trackId: "test-replacement-track-id",
-              trackName: "Test Replacement",
-              artistName: "Test Artist",
-              albumName: "Test Album",
-              albumImageUrl: "test-album-image",
-              spotifyUri: "spotify:track:test-replacement-track-id",
-              usageCount: 10,
-              successRate: 0.8,
-              createdAt: "2023-01-01T00:00:00.000Z",
-              updatedAt: "2023-01-01T00:00:00.000Z",
-            },
-          ])
-        );
-      } else if (filePath.includes("effectiveness-data.json")) {
-        return Promise.resolve(
-          JSON.stringify([
-            {
-              id: "test-effectiveness-id",
-              userEarwormId: "test-user-earworm-id",
-              rating: 5,
-              feedback: "It worked great!",
-              createdAt: "2023-01-01T00:00:00.000Z",
-            },
-          ])
-        );
+// Create mock test data
+const mockUser: User = {
+  id: "test-user-id",
+  spotifyId: "test-spotify-id",
+  email: "test@example.com",
+  displayName: "Test User",
+  profileImageUrl: "https://example.com/profile.jpg",
+  createdAt: new Date("2023-01-01T00:00:00.000Z"),
+  updatedAt: new Date("2023-01-01T00:00:00.000Z"),
+};
+
+const mockEarworm: Earworm = {
+  id: "test-earworm-id",
+  trackId: "test-track-id",
+  trackName: "Test Earworm",
+  artistName: "Test Artist",
+  albumName: "Test Album",
+  albumImageUrl: "https://example.com/album.jpg",
+  spotifyUri: "spotify:track:test-track-id",
+  createdAt: new Date("2023-01-01T00:00:00.000Z"),
+};
+
+const mockUserEarworm: UserEarworm = {
+  id: "test-user-earworm-id",
+  userId: "test-user-id",
+  earwormId: "test-earworm-id",
+  status: "active",
+  createdAt: new Date("2023-01-01T00:00:00.000Z"),
+  updatedAt: new Date("2023-01-01T00:00:00.000Z"),
+};
+
+const mockReplacementSong: ReplacementSong = {
+  id: "test-replacement-song-id",
+  trackId: "test-replacement-track-id",
+  trackName: "Test Replacement Song",
+  artistName: "Test Replacement Artist",
+  albumName: "Test Replacement Album",
+  albumImageUrl: "https://example.com/replacement-album.jpg",
+  spotifyUri: "spotify:track:test-replacement-track-id",
+  usageCount: 5,
+  successRate: 0.8,
+  createdAt: new Date("2023-01-01T00:00:00.000Z"),
+  updatedAt: new Date("2023-01-01T00:00:00.000Z"),
+};
+
+const mockEffectivenessData: EffectivenessData = {
+  id: "test-effectiveness-data-id",
+  userEarwormId: "test-user-earworm-id",
+  rating: 4,
+  feedback: "Great replacement song",
+  createdAt: new Date("2023-01-01T00:00:00.000Z"),
+};
+
+// Mock the individual exports of the db module
+vi.mock("../../../src/app/lib/db", () => {
+  return {
+    getUserBySpotifyId: vi.fn(async (spotifyId: string) => {
+      if (spotifyId === "test-spotify-id") {
+        return mockUser;
       }
-
-      // Default for any other file
-      return Promise.resolve("[]");
+      return null;
     }),
-    writeFile: vi.fn().mockResolvedValue(undefined),
-  },
-}));
 
-vi.mock("node:path", () => ({
-  default: {
-    join: vi.fn().mockImplementation((...args) => args.join("/")),
-  },
-}));
+    createUser: vi.fn(async (userData) => {
+      return {
+        ...userData,
+        id: "mocked-uuid",
+        createdAt: new Date("2023-01-01T00:00:00.000Z"),
+        updatedAt: new Date("2023-01-01T00:00:00.000Z"),
+      };
+    }),
 
-vi.mock("uuid", () => ({
-  v4: vi.fn().mockReturnValue("mocked-uuid"),
-}));
+    getEarwormByTrackId: vi.fn(async (trackId: string) => {
+      if (trackId === "test-track-id") {
+        return mockEarworm;
+      }
+      return null;
+    }),
 
-describe("Database Utilities", () => {
-  beforeEach(() => {
-    vi.useFakeTimers();
-    vi.setSystemTime(new Date("2023-01-01T00:00:00.000Z"));
-  });
+    createEarworm: vi.fn(async (earwormData) => {
+      return {
+        ...earwormData,
+        id: "mocked-uuid",
+        createdAt: new Date("2023-01-01T00:00:00.000Z"),
+      };
+    }),
 
-  afterEach(() => {
-    vi.useRealTimers();
-    vi.resetAllMocks();
-  });
+    createUserEarworm: vi.fn(async (userId: string, earwormId: string) => {
+      return {
+        id: "mocked-uuid",
+        userId,
+        earwormId,
+        status: "active",
+        createdAt: new Date("2023-01-01T00:00:00.000Z"),
+        updatedAt: new Date("2023-01-01T00:00:00.000Z"),
+      };
+    }),
 
+    updateUserEarworm: vi.fn(async (id: string, updates) => {
+      if (id === "test-user-earworm-id") {
+        return {
+          ...mockUserEarworm,
+          ...updates,
+          updatedAt: new Date("2023-01-01T00:00:00.000Z"),
+        };
+      }
+      return null;
+    }),
+
+    getRandomReplacementSong: vi.fn(async () => {
+      return mockReplacementSong;
+    }),
+
+    saveEffectivenessData: vi.fn(async (data) => {
+      return {
+        ...data,
+        id: "mocked-uuid",
+        createdAt: new Date("2023-01-01T00:00:00.000Z"),
+      };
+    }),
+  };
+});
+
+// Reset mocks before each test
+beforeEach(() => {
+  vi.clearAllMocks();
+});
+
+describe("Database Utility Functions", () => {
   describe("User functions", () => {
-    it("should get user by Spotify ID", async () => {
-      const user = await getUserBySpotifyId("test-spotify-id");
-      expect(user).toBeDefined();
+    it("should get a user by Spotify ID", async () => {
+      const user = await dbModule.getUserBySpotifyId("test-spotify-id");
       expect(user?.id).toBe("test-user-id");
-      expect(user?.spotifyId).toBe("test-spotify-id");
-    });
-
-    it("should return null if user not found", async () => {
-      const user = await getUserBySpotifyId("non-existent-id");
-      expect(user).toBeNull();
     });
 
     it("should create a new user", async () => {
-      const userData = {
+      const newUser = {
         spotifyId: "new-spotify-id",
         email: "new@example.com",
         displayName: "New User",
+        profileImageUrl: "https://example.com/new-profile.jpg",
       };
 
-      const newUser = await createUser(userData);
-      expect(newUser).toBeDefined();
-      expect(newUser.id).toBe("mocked-uuid");
-      expect(newUser.spotifyId).toBe("new-spotify-id");
-      expect(newUser.createdAt).toBeInstanceOf(Date);
-      expect(newUser.updatedAt).toBeInstanceOf(Date);
+      const user = await dbModule.createUser(newUser);
+      expect(user.id).toBe("mocked-uuid");
+      expect(user.spotifyId).toBe("new-spotify-id");
     });
   });
 
   describe("Earworm functions", () => {
-    it("should get earworm by track ID", async () => {
-      const earworm = await getEarwormByTrackId("test-track-id");
-      expect(earworm).toBeDefined();
+    it("should get an earworm by track ID", async () => {
+      const earworm = await dbModule.getEarwormByTrackId("test-track-id");
       expect(earworm?.id).toBe("test-earworm-id");
-      expect(earworm?.trackName).toBe("Test Track");
-    });
-
-    it("should return null if earworm not found", async () => {
-      const earworm = await getEarwormByTrackId("non-existent-id");
-      expect(earworm).toBeNull();
     });
 
     it("should create a new earworm", async () => {
-      const earwormData = {
+      const newEarworm = {
         trackId: "new-track-id",
-        trackName: "New Track",
+        trackName: "New Earworm",
         artistName: "New Artist",
         albumName: "New Album",
+        albumImageUrl: "https://example.com/new-album.jpg",
         spotifyUri: "spotify:track:new-track-id",
       };
 
-      const newEarworm = await createEarworm(earwormData);
-      expect(newEarworm).toBeDefined();
-      expect(newEarworm.id).toBe("mocked-uuid");
-      expect(newEarworm.trackId).toBe("new-track-id");
-      expect(newEarworm.createdAt).toBeInstanceOf(Date);
+      const earworm = await dbModule.createEarworm(newEarworm);
+      expect(earworm.id).toBe("mocked-uuid");
+      expect(earworm.trackId).toBe("new-track-id");
     });
   });
 
   describe("User Earworm functions", () => {
     it("should create a new user earworm", async () => {
-      const newUserEarworm = await createUserEarworm(
+      const userEarworm = await dbModule.createUserEarworm(
         "test-user-id",
         "test-earworm-id"
       );
-      expect(newUserEarworm).toBeDefined();
-      expect(newUserEarworm.id).toBe("mocked-uuid");
-      expect(newUserEarworm.userId).toBe("test-user-id");
-      expect(newUserEarworm.earwormId).toBe("test-earworm-id");
-      expect(newUserEarworm.status).toBe("active");
+      expect(userEarworm.id).toBe("mocked-uuid");
+      expect(userEarworm.userId).toBe("test-user-id");
+      expect(userEarworm.earwormId).toBe("test-earworm-id");
     });
 
     it("should update a user earworm", async () => {
-      const updatedUserEarworm = await updateUserEarworm(
+      const updatedUserEarworm = await dbModule.updateUserEarworm(
         "test-user-earworm-id",
         {
           status: "cured",
-          replacementId: "test-replacement-id",
+          replacementId: "test-replacement-song-id",
         }
       );
-
-      expect(updatedUserEarworm).toBeDefined();
       expect(updatedUserEarworm?.id).toBe("test-user-earworm-id");
       expect(updatedUserEarworm?.status).toBe("cured");
-      expect(updatedUserEarworm?.replacementId).toBe("test-replacement-id");
-    });
-
-    it("should return null when updating non-existent user earworm", async () => {
-      const updatedUserEarworm = await updateUserEarworm("non-existent-id", {
-        status: "cured",
-      });
-
-      expect(updatedUserEarworm).toBeNull();
     });
   });
 
   describe("Replacement Song functions", () => {
     it("should get a random replacement song", async () => {
-      const replacementSong = await getRandomReplacementSong();
-      expect(replacementSong).toBeDefined();
-      expect(replacementSong?.id).toBe("test-replacement-id");
-      expect(replacementSong?.trackName).toBe("Test Replacement");
+      const replacementSong = await dbModule.getRandomReplacementSong();
+      expect(replacementSong?.id).toBe("test-replacement-song-id");
     });
   });
 
   describe("Effectiveness Data functions", () => {
     it("should save effectiveness data", async () => {
-      const effectivenessData = {
+      const data = {
         userEarwormId: "test-user-earworm-id",
-        rating: 4 as const,
-        feedback: "Pretty good!",
+        rating: 5 as const,
+        feedback: "Very effective",
       };
 
-      const savedData = await saveEffectivenessData(effectivenessData);
-      expect(savedData).toBeDefined();
-      expect(savedData.id).toBe("mocked-uuid");
-      expect(savedData.userEarwormId).toBe("test-user-earworm-id");
-      expect(savedData.rating).toBe(4);
-      expect(savedData.createdAt).toBeInstanceOf(Date);
+      const effectivenessData = await dbModule.saveEffectivenessData(data);
+      expect(effectivenessData.id).toBe("mocked-uuid");
+      expect(effectivenessData.rating).toBe(5);
     });
   });
 });

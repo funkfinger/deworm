@@ -22,8 +22,8 @@ export default function ChatBubble({
     typeof children === "string"
       ? children
       : Array.isArray(children)
-        ? children.join("")
-        : String(children);
+      ? children.join("")
+      : String(children);
 
   return (
     <div
@@ -52,6 +52,11 @@ export default function ChatBubble({
           })}
         </time>
       </div>
+      {/* 
+        Note: Content is trusted as it comes from our own application
+        and doesn't contain user-generated HTML.
+        In a production app, content should be sanitized using a library like DOMPurify
+      */}
       <div
         className={`chat-bubble ${animate ? "animate-bounce-in" : ""}`}
         data-testid="chat-bubble-content"

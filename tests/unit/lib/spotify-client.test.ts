@@ -1,10 +1,18 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { SpotifyClient } from "@/app/lib/spotify-client";
 
+// Mock auth.ts module to avoid the next-auth dependency issue
+vi.mock("@/app/lib/auth", () => ({
+  auth: vi.fn().mockResolvedValue({
+    accessToken: "test-access-token",
+  }),
+}));
+
 // Mock the spotify-web-api-node module
 vi.mock("spotify-web-api-node", () => {
-  return {
-    default: vi.fn().mockImplementation(() => ({
+  // Create a factory that returns a mock Spotify API with all the methods
+  function SpotifyWebApiConstructor() {
+    return {
       setAccessToken: vi.fn(),
       getMe: vi.fn().mockResolvedValue({
         body: {
@@ -118,7 +126,12 @@ vi.mock("spotify-web-api-node", () => {
       }),
       play: vi.fn().mockResolvedValue({}),
       pause: vi.fn().mockResolvedValue({}),
-    })),
+    };
+  }
+
+  return {
+    __esModule: true,
+    default: SpotifyWebApiConstructor,
   };
 });
 
@@ -175,5 +188,15 @@ describe("SpotifyClient", () => {
 
   it("should pause playback", async () => {
     await expect(spotifyClient.pause()).resolves.not.toThrow();
+  });
+
+  it("should create an authenticated client", async () => {
+    // Test the getAuthenticatedSpotifyClient function
+    // This requires proper mocking of auth() from @/app/lib/auth
+    const { getAuthenticatedSpotifyClient } = await import(
+      "@/app/lib/spotify-client"
+    );
+    const client = await getAuthenticatedSpotifyClient();
+    expect(client).toBeDefined();
   });
 });
