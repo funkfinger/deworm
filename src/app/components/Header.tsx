@@ -8,11 +8,11 @@ export default function Header() {
   const { isAuthenticated, isLoading } = useSpotifySession();
 
   return (
-    <header className="py-4 mb-8">
+    <header className="py-4 mb-8 bg-accent text-accent-content">
       <div className="flex items-center justify-center">
         <Link
           href="/"
-          className="flex items-center gap-2 text-2xl font-bold text-primary"
+          className="flex items-center gap-2 text-2xl font-bold text-accent-content"
         >
           <Image
             src="/images/logo.svg"
@@ -20,7 +20,7 @@ export default function Header() {
             width={381}
             height={128}
             priority={true}
-            className="dark:invert"
+            className="invert"
           />
         </Link>
 
@@ -31,7 +31,7 @@ export default function Header() {
               data-testid="loading-spinner"
             />
           ) : isAuthenticated ? (
-            <span className="badge badge-primary">Spotify Connected</span>
+            <span className="badge badge-secondary">Spotify Connected</span>
           ) : null}
         </div>
       </div>

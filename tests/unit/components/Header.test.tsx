@@ -74,7 +74,7 @@ describe("Header Component", () => {
 
     const badge = screen.getByText("Spotify Connected");
     expect(badge).toBeInTheDocument();
-    expect(badge).toHaveClass("badge-primary");
+    expect(badge).toHaveClass("badge-secondary");
   });
 
   it("should not display anything when not loading and not authenticated", () => {
