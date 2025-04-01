@@ -17,8 +17,8 @@ export default function Header() {
           <Image
             src="/images/logo.svg"
             alt="DeWorm Logo"
-            width={254}
-            height={85}
+            width={381}
+            height={128}
             priority={true}
             className="dark:invert"
           />
