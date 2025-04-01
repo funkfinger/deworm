@@ -9,7 +9,7 @@ export default function Header() {
 
   return (
     <header className="py-4 mb-8">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-center">
         <Link
           href="/"
           className="flex items-center gap-2 text-2xl font-bold text-primary"
@@ -17,14 +17,14 @@ export default function Header() {
           <Image
             src="/images/logo.svg"
             alt="DeWorm Logo"
-            width={150}
-            height={50}
+            width={195}
+            height={65}
             priority={true}
             className="dark:invert"
           />
         </Link>
 
-        <div>
+        <div className="absolute right-4">
           {isLoading ? (
             <span
               className="loading loading-spinner loading-sm"
