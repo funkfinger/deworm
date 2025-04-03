@@ -13,13 +13,18 @@ import { useState } from "react";
 export default function Home() {
   const { isAuthenticated, isLoading } = useSpotifySession();
   const [loggingIn, setLoggingIn] = useState(false);
+  const [loginError, setLoginError] = useState<string | null>(null);
 
   const handleLogin = async () => {
     setLoggingIn(true);
+    setLoginError(null);
     try {
       await loginWithSpotify();
     } catch (error) {
       console.error("Login error:", error);
+      setLoginError(
+        "Failed to connect to Spotify. Please check your API credentials in .env.local file."
+      );
       setLoggingIn(false);
     }
   };
@@ -78,24 +83,55 @@ export default function Home() {
               </button>
             </>
           ) : (
-            <button
-              onClick={handleLogin}
-              disabled={loggingIn}
-              className="btn btn-primary btn-lg w-full shadow-lg"
-              type="button"
-            >
-              {loggingIn ? (
-                <>
-                  <span className="loading loading-spinner" />
-                  Connecting...
-                </>
-              ) : (
-                <>
-                  Login with Spotify
-                  <FontAwesomeIcon icon={faSpotify} />
-                </>
+            <>
+              <button
+                onClick={handleLogin}
+                disabled={loggingIn}
+                className="btn btn-primary btn-lg w-full shadow-lg"
+                type="button"
+                data-testid="spotify-login-button"
+              >
+                {loggingIn ? (
+                  <>
+                    <span className="loading loading-spinner" />
+                    Connecting...
+                  </>
+                ) : (
+                  <>
+                    Login with Spotify
+                    <FontAwesomeIcon icon={faSpotify} />
+                  </>
+                )}
+              </button>
+
+              {loginError && (
+                <div
+                  className="alert alert-error mt-4"
+                  data-testid="login-error"
+                >
+                  <div>
+                    <span>{loginError}</span>
+                    <p className="text-sm mt-2">
+                      To fix this issue, you need to:
+                      <ol className="list-decimal list-inside mt-1">
+                        <li>
+                          Register your app on the{" "}
+                          <a
+                            href="https://developer.spotify.com/dashboard"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="underline"
+                          >
+                            Spotify Developer Dashboard
+                          </a>
+                        </li>
+                        <li>Add the credentials to your .env.local file</li>
+                      </ol>
+                    </p>
+                  </div>
+                </div>
               )}
-            </button>
+            </>
           )}
         </div>
       </div>
