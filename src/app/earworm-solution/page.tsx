@@ -17,9 +17,10 @@ export default function EarwormSolutionPage() {
   const autoplay = searchParams.get("autoplay") === "true";
   const [isLoadingTrack, setIsLoadingTrack] = useState(false);
   const [track, setTrack] = useState<SpotifyTrack | null>(null);
-  
+
   // Get the Spotify player context
-  const { playbackError, currentTrack, isPlaying } = useSpotifyPlayer();
+  const { playbackError, currentTrack, isPlaying, playTrack } =
+    useSpotifyPlayer();
 
   // Redirect to home if not authenticated
   useEffect(() => {
@@ -40,39 +41,53 @@ export default function EarwormSolutionPage() {
     if (trackId && !isLoading && isAuthenticated) {
       const fetchTrack = async () => {
         setIsLoadingTrack(true);
-        
+
         try {
           console.log("Fetching track details for ID:", trackId);
-          
+
           // Use the API route instead of calling the Spotify client directly
           const response = await fetch(`/api/spotify/track/${trackId}`);
-          
+
           if (!response.ok) {
             const errorData = await response.json();
             throw new Error(errorData.error || "Failed to fetch track");
           }
-          
+
           const trackData = await response.json();
           console.log("Track data received:", trackData);
           setTrack(trackData);
-          
-          // Note: We don't need to handle autoplay here anymore
-          // The player is already initialized and playing from the search page
+
+          // If autoplay is enabled and we don't already have a current track playing,
+          // try to play this track
+          if (
+            autoplay &&
+            trackData &&
+            (!currentTrack || currentTrack.id !== trackData.id)
+          ) {
+            console.log("Autoplay enabled, attempting to play track");
+            playTrack(trackData).catch((error) => {
+              console.error("Error auto-playing track:", error);
+              // Error is already handled in the playTrack function
+            });
+          }
         } catch (error) {
           console.error("Error fetching track:", error);
         } finally {
           setIsLoadingTrack(false);
         }
       };
-      
+
       fetchTrack();
     }
-  }, [trackId, isLoading, isAuthenticated]);
+  }, [trackId, isLoading, isAuthenticated, autoplay, currentTrack, playTrack]);
 
   if (isLoading || isLoadingTrack) {
     return (
       <div className="flex justify-center items-center min-h-[60vh]">
-        <span className="loading loading-spinner loading-lg text-primary" data-testid="loading-spinner" />
+        <span
+          className="loading loading-spinner loading-lg text-primary"
+          data-testid="loading-spinner"
+        />
       </div>
     );
   }
@@ -147,8 +162,8 @@ export default function EarwormSolutionPage() {
               <li className="p-4 bg-base-200 rounded-lg">
                 <span className="font-medium">Distract yourself</span>
                 <p className="mt-2">
-                  Do a mentally engaging activity for 5-10 minutes (like a puzzle
-                  or reading).
+                  Do a mentally engaging activity for 5-10 minutes (like a
+                  puzzle or reading).
                 </p>
               </li>
               <li className="p-4 bg-base-200 rounded-lg">

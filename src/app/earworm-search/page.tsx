@@ -66,20 +66,23 @@ export default function EarwormSearchPage() {
   };
 
   // Get the player context at the component level
-  const { playTrack } = useSpotifyPlayer();
+  const { initializePlayer, selectTrack } = useSpotifyPlayer();
 
   // Handle direct selection (UGH! My worm! button)
   const handleDirectSelect = (track: SpotifyTrack): void => {
-    // Start playing the track
-    playTrack(track)
+    // Initialize the player (this counts as user interaction)
+    initializePlayer()
       .then(() => {
-        console.log("Track playback started, navigating to solution page...");
+        // Store the track information
+        selectTrack(track);
+
+        console.log("Track selected, navigating to solution page...");
         // Navigate to the solution page with the selected track
         router.push(`/earworm-solution?trackId=${track.id}&autoplay=true`);
       })
       .catch((error) => {
-        console.error("Failed to play track:", error);
-        // Navigate anyway even if playback fails
+        console.error("Failed to initialize player:", error);
+        // Navigate anyway even if initialization fails
         router.push(`/earworm-solution?trackId=${track.id}&autoplay=true`);
       });
   };

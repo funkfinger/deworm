@@ -1,5 +1,6 @@
 "use client";
 
+import { useSpotifyPlayer } from "@/app/contexts/SpotifyPlayerContext";
 import type { SpotifyTrack } from "@/app/models/spotify";
 import { faMusic, faPause, faPlay } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -17,14 +18,46 @@ interface SpotifyTrackCardProps {
 
 export default function SpotifyTrackCard({
   track,
-  isPlaying = false,
-  onPlayPause,
+  isPlaying: propIsPlaying,
+  onPlayPause: propOnPlayPause,
   isSelected = false,
   onClick,
   className = "",
   showControls = true,
 }: SpotifyTrackCardProps) {
   const [imageError, setImageError] = useState(false);
+
+  // Get the player context
+  const {
+    currentTrack,
+    isPlaying: contextIsPlaying,
+    playTrack,
+    pausePlayback,
+    resumePlayback,
+  } = useSpotifyPlayer();
+
+  // Determine if this track is the current track and if it's playing
+  const isCurrentTrack = currentTrack?.id === track.id;
+  const isPlaying =
+    propIsPlaying !== undefined
+      ? propIsPlaying
+      : isCurrentTrack && contextIsPlaying;
+
+  // Handle play/pause
+  const handlePlayPause = () => {
+    if (propOnPlayPause) {
+      propOnPlayPause();
+      return;
+    }
+
+    if (isPlaying) {
+      pausePlayback();
+    } else if (isCurrentTrack) {
+      resumePlayback();
+    } else {
+      playTrack(track);
+    }
+  };
 
   const albumImage = track.album.images[0]?.url;
 
@@ -93,13 +126,13 @@ export default function SpotifyTrackCard({
             {formatDuration(track.duration_ms)}
           </span>
 
-          {showControls && onPlayPause && (
+          {showControls && (
             <div className="relative z-20">
               <button
                 className="btn btn-circle btn-sm btn-primary pointer-events-auto"
                 onClick={(e) => {
                   e.stopPropagation();
-                  onPlayPause();
+                  handlePlayPause();
                 }}
                 type="button"
                 data-testid="play-pause-button"

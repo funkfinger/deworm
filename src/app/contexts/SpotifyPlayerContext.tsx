@@ -15,6 +15,7 @@ interface SpotifyPlayerContextType {
   isPlaying: boolean;
   playbackError: string | null;
   initializePlayer: () => Promise<boolean>;
+  selectTrack: (track: SpotifyTrack) => void;
   playTrack: (track: SpotifyTrack) => Promise<void>;
   pausePlayback: () => Promise<void>;
   resumePlayback: () => Promise<void>;
@@ -26,6 +27,7 @@ const defaultContext: SpotifyPlayerContextType = {
   isPlaying: false,
   playbackError: null,
   initializePlayer: async () => false,
+  selectTrack: () => {},
   playTrack: async () => {},
   pausePlayback: async () => {},
   resumePlayback: async () => {},
@@ -61,6 +63,12 @@ export function SpotifyPlayerProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  // Select a track (store it without playing)
+  const selectTrack = (track: SpotifyTrack): void => {
+    console.log("Track selected:", track.name, "URI:", track.uri);
+    setCurrentTrack(track);
+  };
+
   // Play a specific track
   const playTrack = async (track: SpotifyTrack): Promise<void> => {
     try {
@@ -74,33 +82,49 @@ export function SpotifyPlayerProvider({ children }: { children: ReactNode }) {
         }
       }
 
-      console.log("Playing track via API:", track.name, "URI:", track.uri);
+      // Store the track information regardless of playback success
+      selectTrack(track);
 
-      // Use the API route instead of calling the Spotify client directly
-      const response = await fetch("/api/spotify/play", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ uri: track.uri }),
-      });
+      console.log(
+        "Attempting to play track via API:",
+        track.name,
+        "URI:",
+        track.uri
+      );
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to play track");
+      try {
+        // Use the API route instead of calling the Spotify client directly
+        const response = await fetch("/api/spotify/play", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ uri: track.uri }),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || "Failed to play track");
+        }
+
+        console.log("Playback started successfully");
+        setIsPlaying(true);
+      } catch (playError) {
+        console.warn(
+          "Playback warning: No active device found. Track is selected but not playing."
+        );
+        setPlaybackError(
+          "No active Spotify device found. Open Spotify on your device and try the play button below."
+        );
+        // Don't reject the promise here, we still want to navigate to the solution page
       }
 
-      console.log("Playback started successfully");
-      setCurrentTrack(track);
-      setIsPlaying(true);
       return Promise.resolve();
     } catch (error) {
-      console.error("Playback error:", error);
+      console.error("Player initialization error:", error);
       const errorMessage =
         error instanceof Error ? error.message : String(error);
-      setPlaybackError(
-        `Could not play track: ${errorMessage}. Make sure you have an active Spotify device.`
-      );
+      setPlaybackError(`Could not initialize player: ${errorMessage}`);
       return Promise.reject(error);
     }
   };
@@ -161,6 +185,7 @@ export function SpotifyPlayerProvider({ children }: { children: ReactNode }) {
         isPlaying,
         playbackError,
         initializePlayer,
+        selectTrack,
         playTrack,
         pausePlayback,
         resumePlayback,
