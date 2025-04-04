@@ -64,6 +64,12 @@ export default function EarwormSearchPage() {
     setSelectedTrack(track);
   };
 
+  // Handle direct selection (UGH! My worm! button)
+  const handleDirectSelect = (track: SpotifyTrack): void => {
+    // Navigate directly to the solution page with the selected track
+    router.push(`/earworm-solution?trackId=${track.id}&autoplay=true`);
+  };
+
   // Handle continue to next step
   const handleContinue = (): void => {
     if (selectedTrack) {
@@ -112,6 +118,7 @@ export default function EarwormSearchPage() {
             <SpotifySearchInput
               onSearch={handleSearch}
               onTrackSelect={handleTrackSelect}
+              onDirectSelect={handleDirectSelect}
               results={searchResults}
               isLoading={isSearching}
               placeholder="What's stuck in your noggin?"

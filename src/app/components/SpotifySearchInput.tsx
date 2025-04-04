@@ -1,13 +1,18 @@
 "use client";
 
 import type { SpotifyTrack } from "@/app/models/spotify";
-import { faSearch, faSpinner } from "@fortawesome/free-solid-svg-icons";
+import {
+  faArrowRight,
+  faSearch,
+  faSpinner,
+} from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useEffect, useRef, useState } from "react";
 
 interface SpotifySearchInputProps {
   onSearch: (query: string) => Promise<void> | void;
   onTrackSelect: (track: SpotifyTrack) => void;
+  onDirectSelect?: (track: SpotifyTrack) => void;
   results: SpotifyTrack[];
   isLoading?: boolean;
   placeholder?: string;
@@ -19,6 +24,7 @@ interface SpotifySearchInputProps {
 export default function SpotifySearchInput({
   onSearch,
   onTrackSelect,
+  onDirectSelect,
   results,
   isLoading = false,
   placeholder = "What's stuck in your noggin?",
@@ -128,32 +134,46 @@ export default function SpotifySearchInput({
           <ul className="menu p-2">
             {results.map((track) => (
               <li key={track.id}>
-                <button
-                  type="button"
-                  onClick={() => handleTrackSelect(track)}
-                  className="flex items-center p-2 hover:bg-base-200 rounded-md"
-                  data-testid={`result-${track.id}`}
-                >
-                  <div className="w-10 h-10 mr-2">
-                    {track.album.images[0] ? (
-                      <img
-                        src={track.album.images[0].url}
-                        alt={`${track.name} album cover`}
-                        className="w-full h-full object-cover rounded"
-                      />
-                    ) : (
-                      <div className="w-full h-full bg-base-300 rounded flex items-center justify-center">
-                        <FontAwesomeIcon icon={faSearch} />
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex-1 overflow-hidden">
-                    <div className="font-medium truncate">{track.name}</div>
-                    <div className="text-xs opacity-70 truncate">
-                      {track.artists.map((a) => a.name).join(", ")}
+                <div className="flex flex-col w-full">
+                  <button
+                    type="button"
+                    onClick={() => handleTrackSelect(track)}
+                    className="flex items-center p-2 hover:bg-base-200 rounded-md"
+                    data-testid={`result-${track.id}`}
+                  >
+                    <div className="w-10 h-10 mr-2">
+                      {track.album.images[0] ? (
+                        <img
+                          src={track.album.images[0].url}
+                          alt={`${track.name} album cover`}
+                          className="w-full h-full object-cover rounded"
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-base-300 rounded flex items-center justify-center">
+                          <FontAwesomeIcon icon={faSearch} />
+                        </div>
+                      )}
                     </div>
-                  </div>
-                </button>
+                    <div className="flex-1 overflow-hidden">
+                      <div className="font-medium truncate">{track.name}</div>
+                      <div className="text-xs opacity-70 truncate">
+                        {track.artists.map((a) => a.name).join(", ")}
+                      </div>
+                    </div>
+                  </button>
+
+                  {onDirectSelect && (
+                    <button
+                      type="button"
+                      onClick={() => onDirectSelect(track)}
+                      className="btn btn-xs btn-accent self-end mt-1 mb-1 mr-2"
+                      data-testid={`direct-select-${track.id}`}
+                    >
+                      UGH! My worm!{" "}
+                      <FontAwesomeIcon icon={faArrowRight} className="ml-1" />
+                    </button>
+                  )}
+                </div>
               </li>
             ))}
           </ul>
