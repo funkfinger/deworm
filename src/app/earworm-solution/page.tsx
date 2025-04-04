@@ -4,7 +4,7 @@ import ChatBubble from "@/app/components/ChatBubble";
 import Mascot from "@/app/components/Mascot";
 import SpotifyTrackCard from "@/app/components/SpotifyTrackCard";
 import { useSpotifySession } from "@/app/lib/auth-client";
-import { spotifyClient } from "@/app/lib/spotify-client";
+import { getAuthenticatedSpotifyClient } from "@/app/lib/spotify-client";
 import type { SpotifyTrack } from "@/app/models/spotify";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -41,6 +41,12 @@ export default function EarwormSolutionPage() {
         setPlaybackError(null);
 
         try {
+          const spotifyClient = await getAuthenticatedSpotifyClient();
+
+          if (!spotifyClient) {
+            throw new Error("Not authenticated with Spotify");
+          }
+
           const trackData = await spotifyClient.getTrack(trackId);
           setTrack(trackData);
 
