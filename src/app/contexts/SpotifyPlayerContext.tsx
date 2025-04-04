@@ -2,7 +2,13 @@
 
 import { getAuthenticatedSpotifyClient } from "@/app/lib/spotify-client";
 import type { SpotifyTrack } from "@/app/models/spotify";
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  ReactNode,
+} from "react";
 
 interface SpotifyPlayerContextType {
   isPlayerReady: boolean;
@@ -26,7 +32,8 @@ const defaultContext: SpotifyPlayerContextType = {
   resumePlayback: async () => {},
 };
 
-const SpotifyPlayerContext = createContext<SpotifyPlayerContextType>(defaultContext);
+const SpotifyPlayerContext =
+  createContext<SpotifyPlayerContextType>(defaultContext);
 
 export const useSpotifyPlayer = () => useContext(SpotifyPlayerContext);
 
@@ -42,10 +49,11 @@ export function SpotifyPlayerProvider({ children }: { children: ReactNode }) {
     try {
       setHasInteracted(true);
       console.log("Initializing Spotify player...");
-      
+
       // This is just a placeholder to mark that the player is ready
       // In a real implementation, you might initialize the Spotify Web Playback SDK here
       setIsPlayerReady(true);
+      console.log("Spotify player initialized successfully");
       return true;
     } catch (error) {
       console.error("Failed to initialize player:", error);
@@ -58,28 +66,36 @@ export function SpotifyPlayerProvider({ children }: { children: ReactNode }) {
   const playTrack = async (track: SpotifyTrack): Promise<void> => {
     try {
       setPlaybackError(null);
-      
+
       if (!isPlayerReady) {
+        console.log("Player not ready, initializing...");
         const initialized = await initializePlayer();
         if (!initialized) {
           throw new Error("Player not initialized");
         }
       }
-      
+
+      console.log("Getting authenticated Spotify client...");
       const spotifyClient = await getAuthenticatedSpotifyClient();
       if (!spotifyClient) {
         throw new Error("Not authenticated with Spotify");
       }
-      
-      console.log("Playing track:", track.name);
+
+      console.log("Playing track:", track.name, "URI:", track.uri);
       await spotifyClient.playTrack(track.uri);
-      
+      console.log("Playback started successfully");
+
       setCurrentTrack(track);
       setIsPlaying(true);
+      return Promise.resolve();
     } catch (error) {
       console.error("Playback error:", error);
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      setPlaybackError(`Could not play track: ${errorMessage}. Make sure you have an active Spotify device.`);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      setPlaybackError(
+        `Could not play track: ${errorMessage}. Make sure you have an active Spotify device.`
+      );
+      return Promise.reject(error);
     }
   };
 
@@ -90,7 +106,7 @@ export function SpotifyPlayerProvider({ children }: { children: ReactNode }) {
       if (!spotifyClient) {
         throw new Error("Not authenticated with Spotify");
       }
-      
+
       await spotifyClient.pause();
       setIsPlaying(false);
     } catch (error) {
@@ -105,12 +121,12 @@ export function SpotifyPlayerProvider({ children }: { children: ReactNode }) {
       if (!currentTrack) {
         throw new Error("No track to resume");
       }
-      
+
       const spotifyClient = await getAuthenticatedSpotifyClient();
       if (!spotifyClient) {
         throw new Error("Not authenticated with Spotify");
       }
-      
+
       await spotifyClient.playTrack(currentTrack.uri);
       setIsPlaying(true);
     } catch (error) {

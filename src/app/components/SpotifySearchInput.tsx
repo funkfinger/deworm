@@ -38,6 +38,9 @@ export default function SpotifySearchInput({
   const inputRef = useRef<HTMLInputElement>(null);
   const resultsRef = useRef<HTMLDivElement>(null);
 
+  // Get the Spotify player context at the component level
+  const { initializePlayer } = useSpotifyPlayer();
+
   // Debounce search (only if not using external debounce)
   useEffect(() => {
     // Skip if using external debounce
@@ -168,11 +171,23 @@ export default function SpotifySearchInput({
                       type="button"
                       onClick={() => {
                         // Initialize the player first (this counts as user interaction)
-                        const { initializePlayer } = useSpotifyPlayer();
-                        initializePlayer().then(() => {
-                          // Then call the direct select handler
-                          onDirectSelect(track);
-                        });
+                        initializePlayer()
+                          .then(() => {
+                            // Then call the direct select handler
+                            if (onDirectSelect) {
+                              onDirectSelect(track);
+                            }
+                          })
+                          .catch((error) => {
+                            console.error(
+                              "Failed to initialize player:",
+                              error
+                            );
+                            // Still call the direct select handler even if player init fails
+                            if (onDirectSelect) {
+                              onDirectSelect(track);
+                            }
+                          });
                       }}
                       className="btn btn-xs btn-accent self-end mt-1 mb-1 mr-2"
                       data-testid={`direct-select-${track.id}`}

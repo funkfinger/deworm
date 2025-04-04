@@ -65,16 +65,23 @@ export default function EarwormSearchPage() {
     setSelectedTrack(track);
   };
 
+  // Get the player context at the component level
+  const { playTrack } = useSpotifyPlayer();
+
   // Handle direct selection (UGH! My worm! button)
   const handleDirectSelect = (track: SpotifyTrack): void => {
-    // Get the player context
-    const { playTrack } = useSpotifyPlayer();
-
     // Start playing the track
-    playTrack(track).then(() => {
-      // Navigate to the solution page with the selected track
-      router.push(`/earworm-solution?trackId=${track.id}&autoplay=true`);
-    });
+    playTrack(track)
+      .then(() => {
+        console.log("Track playback started, navigating to solution page...");
+        // Navigate to the solution page with the selected track
+        router.push(`/earworm-solution?trackId=${track.id}&autoplay=true`);
+      })
+      .catch((error) => {
+        console.error("Failed to play track:", error);
+        // Navigate anyway even if playback fails
+        router.push(`/earworm-solution?trackId=${track.id}&autoplay=true`);
+      });
   };
 
   // Handle continue to next step
