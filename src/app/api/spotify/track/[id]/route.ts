@@ -6,24 +6,22 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const trackId = params.id;
-    
+    // Await params to avoid Next.js warning
+    const { id: trackId } = await Promise.resolve(params);
+
     if (!trackId) {
       return NextResponse.json(
         { error: "Track ID is required" },
         { status: 400 }
       );
     }
-    
+
     const spotifyClient = await getAuthenticatedSpotifyClient();
-    
+
     if (!spotifyClient) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-    
+
     const track = await spotifyClient.getTrack(trackId);
     return NextResponse.json(track);
   } catch (error) {
