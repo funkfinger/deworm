@@ -1,5 +1,6 @@
 "use client";
 
+import { useSpotifyPlayer } from "@/app/contexts/SpotifyPlayerContext";
 import type { SpotifyTrack } from "@/app/models/spotify";
 import {
   faArrowRight,
@@ -165,7 +166,14 @@ export default function SpotifySearchInput({
                   {onDirectSelect && (
                     <button
                       type="button"
-                      onClick={() => onDirectSelect(track)}
+                      onClick={() => {
+                        // Initialize the player first (this counts as user interaction)
+                        const { initializePlayer } = useSpotifyPlayer();
+                        initializePlayer().then(() => {
+                          // Then call the direct select handler
+                          onDirectSelect(track);
+                        });
+                      }}
                       className="btn btn-xs btn-accent self-end mt-1 mb-1 mr-2"
                       data-testid={`direct-select-${track.id}`}
                     >

@@ -4,6 +4,7 @@ import ChatBubble from "@/app/components/ChatBubble";
 import Mascot from "@/app/components/Mascot";
 import SpotifySearchInput from "@/app/components/SpotifySearchInput";
 import SpotifyTrackCard from "@/app/components/SpotifyTrackCard";
+import { useSpotifyPlayer } from "@/app/contexts/SpotifyPlayerContext";
 import { useSpotifySession } from "@/app/lib/auth-client";
 import { useOptimizedSearch } from "@/app/lib/search-utils";
 import type { SpotifySearchResult, SpotifyTrack } from "@/app/models/spotify";
@@ -66,8 +67,14 @@ export default function EarwormSearchPage() {
 
   // Handle direct selection (UGH! My worm! button)
   const handleDirectSelect = (track: SpotifyTrack): void => {
-    // Navigate directly to the solution page with the selected track
-    router.push(`/earworm-solution?trackId=${track.id}&autoplay=true`);
+    // Get the player context
+    const { playTrack } = useSpotifyPlayer();
+
+    // Start playing the track
+    playTrack(track).then(() => {
+      // Navigate to the solution page with the selected track
+      router.push(`/earworm-solution?trackId=${track.id}&autoplay=true`);
+    });
   };
 
   // Handle continue to next step
