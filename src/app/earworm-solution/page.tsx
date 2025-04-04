@@ -5,7 +5,6 @@ import Mascot from "@/app/components/Mascot";
 import SpotifyTrackCard from "@/app/components/SpotifyTrackCard";
 import { useSpotifyPlayer } from "@/app/contexts/SpotifyPlayerContext";
 import { useSpotifySession } from "@/app/lib/auth-client";
-import { getAuthenticatedSpotifyClient } from "@/app/lib/spotify-client";
 import type { SpotifyTrack } from "@/app/models/spotify";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -18,7 +17,7 @@ export default function EarwormSolutionPage() {
   const autoplay = searchParams.get("autoplay") === "true";
   const [isLoadingTrack, setIsLoadingTrack] = useState(false);
   const [track, setTrack] = useState<SpotifyTrack | null>(null);
-
+  
   // Get the Spotify player context
   const { playbackError, currentTrack, isPlaying } = useSpotifyPlayer();
 
@@ -41,19 +40,22 @@ export default function EarwormSolutionPage() {
     if (trackId && !isLoading && isAuthenticated) {
       const fetchTrack = async () => {
         setIsLoadingTrack(true);
-
+        
         try {
           console.log("Fetching track details for ID:", trackId);
-          const spotifyClient = await getAuthenticatedSpotifyClient();
-
-          if (!spotifyClient) {
-            throw new Error("Not authenticated with Spotify");
+          
+          // Use the API route instead of calling the Spotify client directly
+          const response = await fetch(`/api/spotify/track/${trackId}`);
+          
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || "Failed to fetch track");
           }
-
-          const trackData = await spotifyClient.getTrack(trackId);
+          
+          const trackData = await response.json();
           console.log("Track data received:", trackData);
           setTrack(trackData);
-
+          
           // Note: We don't need to handle autoplay here anymore
           // The player is already initialized and playing from the search page
         } catch (error) {
@@ -62,7 +64,7 @@ export default function EarwormSolutionPage() {
           setIsLoadingTrack(false);
         }
       };
-
+      
       fetchTrack();
     }
   }, [trackId, isLoading, isAuthenticated]);
@@ -70,10 +72,7 @@ export default function EarwormSolutionPage() {
   if (isLoading || isLoadingTrack) {
     return (
       <div className="flex justify-center items-center min-h-[60vh]">
-        <span
-          className="loading loading-spinner loading-lg text-primary"
-          data-testid="loading-spinner"
-        />
+        <span className="loading loading-spinner loading-lg text-primary" data-testid="loading-spinner" />
       </div>
     );
   }
@@ -148,8 +147,8 @@ export default function EarwormSolutionPage() {
               <li className="p-4 bg-base-200 rounded-lg">
                 <span className="font-medium">Distract yourself</span>
                 <p className="mt-2">
-                  Do a mentally engaging activity for 5-10 minutes (like a
-                  puzzle or reading).
+                  Do a mentally engaging activity for 5-10 minutes (like a puzzle
+                  or reading).
                 </p>
               </li>
               <li className="p-4 bg-base-200 rounded-lg">

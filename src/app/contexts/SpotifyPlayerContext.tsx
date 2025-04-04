@@ -1,6 +1,5 @@
 "use client";
 
-import { getAuthenticatedSpotifyClient } from "@/app/lib/spotify-client";
 import type { SpotifyTrack } from "@/app/models/spotify";
 import {
   createContext,
@@ -75,16 +74,23 @@ export function SpotifyPlayerProvider({ children }: { children: ReactNode }) {
         }
       }
 
-      console.log("Getting authenticated Spotify client...");
-      const spotifyClient = await getAuthenticatedSpotifyClient();
-      if (!spotifyClient) {
-        throw new Error("Not authenticated with Spotify");
+      console.log("Playing track via API:", track.name, "URI:", track.uri);
+
+      // Use the API route instead of calling the Spotify client directly
+      const response = await fetch("/api/spotify/play", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ uri: track.uri }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to play track");
       }
 
-      console.log("Playing track:", track.name, "URI:", track.uri);
-      await spotifyClient.playTrack(track.uri);
       console.log("Playback started successfully");
-
       setCurrentTrack(track);
       setIsPlaying(true);
       return Promise.resolve();
@@ -102,12 +108,16 @@ export function SpotifyPlayerProvider({ children }: { children: ReactNode }) {
   // Pause playback
   const pausePlayback = async (): Promise<void> => {
     try {
-      const spotifyClient = await getAuthenticatedSpotifyClient();
-      if (!spotifyClient) {
-        throw new Error("Not authenticated with Spotify");
+      // Use the API route instead of calling the Spotify client directly
+      const response = await fetch("/api/spotify/play", {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to pause playback");
       }
 
-      await spotifyClient.pause();
       setIsPlaying(false);
     } catch (error) {
       console.error("Pause error:", error);
@@ -122,12 +132,20 @@ export function SpotifyPlayerProvider({ children }: { children: ReactNode }) {
         throw new Error("No track to resume");
       }
 
-      const spotifyClient = await getAuthenticatedSpotifyClient();
-      if (!spotifyClient) {
-        throw new Error("Not authenticated with Spotify");
+      // Use the API route instead of calling the Spotify client directly
+      const response = await fetch("/api/spotify/play", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ uri: currentTrack.uri }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to resume playback");
       }
 
-      await spotifyClient.playTrack(currentTrack.uri);
       setIsPlaying(true);
     } catch (error) {
       console.error("Resume error:", error);
