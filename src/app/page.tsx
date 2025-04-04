@@ -111,7 +111,7 @@ export default function Home() {
                 >
                   <div>
                     <span>{loginError}</span>
-                    <p className="text-sm mt-2">
+                    <div className="text-sm mt-2">
                       To fix this issue, you need to:
                       <ol className="list-decimal list-inside mt-1">
                         <li>
@@ -127,7 +127,7 @@ export default function Home() {
                         </li>
                         <li>Add the credentials to your .env.local file</li>
                       </ol>
-                    </p>
+                    </div>
                   </div>
                 </div>
               )}
