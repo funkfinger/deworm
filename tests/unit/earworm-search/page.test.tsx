@@ -17,6 +17,17 @@ vi.mock("@/app/lib/auth-client", () => ({
   }),
 }));
 
+// Mock the search-utils module
+vi.mock("@/app/lib/search-utils", () => ({
+  useOptimizedSearch: (searchFn: any) => {
+    return {
+      handleSearch: searchFn,
+      isLoading: false,
+      lastQuery: "",
+    };
+  },
+}));
+
 // Mock the SpotifySearchInput component
 vi.mock("@/app/components/SpotifySearchInput", () => ({
   default: ({ onSearch, onTrackSelect, results, isLoading }: any) => (
@@ -74,7 +85,7 @@ describe("EarwormSearchPage", () => {
 
   it("renders the search page with mascot and chat bubble", () => {
     render(<EarwormSearchPage />);
-    
+
     expect(screen.getByTestId("mascot-container")).toBeInTheDocument();
     expect(screen.getByTestId("chat-bubble-content")).toBeInTheDocument();
     expect(screen.getByText(/find that nasty ear worm/i)).toBeInTheDocument();
@@ -106,17 +117,17 @@ describe("EarwormSearchPage", () => {
     });
 
     render(<EarwormSearchPage />);
-    
+
     // Trigger search
     fireEvent.click(screen.getByTestId("mock-search-button"));
-    
+
     // Verify fetch was called with correct URL
     await waitFor(() => {
       expect(global.fetch).toHaveBeenCalledWith(
         "/api/spotify/search?q=test%20query"
       );
     });
-    
+
     // Verify results are displayed
     await waitFor(() => {
       expect(screen.getByTestId("mock-result-track1")).toBeInTheDocument();
@@ -143,21 +154,25 @@ describe("EarwormSearchPage", () => {
     });
 
     render(<EarwormSearchPage />);
-    
+
     // Trigger search
     fireEvent.click(screen.getByTestId("mock-search-button"));
-    
+
     // Wait for results and select a track
     await waitFor(() => {
       expect(screen.getByTestId("mock-result-track1")).toBeInTheDocument();
     });
-    
+
     fireEvent.click(screen.getByTestId("mock-result-track1"));
-    
+
     // Verify selected track is displayed
     await waitFor(() => {
-      expect(screen.getByTestId("selected-track-container")).toBeInTheDocument();
-      expect(screen.getByTestId("mock-track-name")).toHaveTextContent("Test Track 1");
+      expect(
+        screen.getByTestId("selected-track-container")
+      ).toBeInTheDocument();
+      expect(screen.getByTestId("mock-track-name")).toHaveTextContent(
+        "Test Track 1"
+      );
       expect(screen.getByTestId("continue-button")).toBeInTheDocument();
     });
   });
@@ -170,14 +185,16 @@ describe("EarwormSearchPage", () => {
     });
 
     render(<EarwormSearchPage />);
-    
+
     // Trigger search
     fireEvent.click(screen.getByTestId("mock-search-button"));
-    
+
     // Verify error message is displayed
     await waitFor(() => {
       expect(screen.getByTestId("search-error")).toBeInTheDocument();
-      expect(screen.getByTestId("search-error")).toHaveTextContent("Test error message");
+      expect(screen.getByTestId("search-error")).toHaveTextContent(
+        "Test error message"
+      );
     });
   });
 
@@ -200,28 +217,32 @@ describe("EarwormSearchPage", () => {
     });
 
     render(<EarwormSearchPage />);
-    
+
     // Trigger search
     fireEvent.click(screen.getByTestId("mock-search-button"));
-    
+
     // Wait for results and select a track
     await waitFor(() => {
       expect(screen.getByTestId("mock-result-track1")).toBeInTheDocument();
     });
-    
+
     fireEvent.click(screen.getByTestId("mock-result-track1"));
-    
+
     // Verify selected track is displayed
     await waitFor(() => {
-      expect(screen.getByTestId("selected-track-container")).toBeInTheDocument();
+      expect(
+        screen.getByTestId("selected-track-container")
+      ).toBeInTheDocument();
     });
-    
+
     // Click clear selection button
     fireEvent.click(screen.getByTestId("clear-selection-button"));
-    
+
     // Verify selected track is no longer displayed
     await waitFor(() => {
-      expect(screen.queryByTestId("selected-track-container")).not.toBeInTheDocument();
+      expect(
+        screen.queryByTestId("selected-track-container")
+      ).not.toBeInTheDocument();
     });
   });
 });

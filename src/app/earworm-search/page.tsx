@@ -5,17 +5,17 @@ import Mascot from "@/app/components/Mascot";
 import SpotifySearchInput from "@/app/components/SpotifySearchInput";
 import SpotifyTrackCard from "@/app/components/SpotifyTrackCard";
 import { useSpotifySession } from "@/app/lib/auth-client";
+import { useOptimizedSearch } from "@/app/lib/search-utils";
 import type { SpotifySearchResult, SpotifyTrack } from "@/app/models/spotify";
 import { faArrowRight } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 export default function EarwormSearchPage() {
   const { isAuthenticated, isLoading } = useSpotifySession();
   const router = useRouter();
   const [searchResults, setSearchResults] = useState<SpotifyTrack[]>([]);
-  const [isSearching, setIsSearching] = useState(false);
   const [selectedTrack, setSelectedTrack] = useState<SpotifyTrack | null>(null);
   const [searchError, setSearchError] = useState<string | null>(null);
 
@@ -26,11 +26,8 @@ export default function EarwormSearchPage() {
     }
   }, [isAuthenticated, isLoading, router]);
 
-  // Handle search function
-  const handleSearch = async (query: string): Promise<void> => {
-    if (query.trim().length < 2) return;
-
-    setIsSearching(true);
+  // Define the search function
+  const performSearch = useCallback(async (query: string): Promise<void> => {
     setSearchError(null);
 
     try {
@@ -51,10 +48,16 @@ export default function EarwormSearchPage() {
         error instanceof Error ? error.message : "An unknown error occurred"
       );
       setSearchResults([]);
-    } finally {
-      setIsSearching(false);
     }
-  };
+  }, []);
+
+  // Use the optimized search hook
+  const { handleSearch, isLoading: isSearching } = useOptimizedSearch(
+    performSearch,
+    500, // 500ms debounce
+    2, // Minimum 2 characters
+    1000 // 1 second rate limit
+  );
 
   // Handle track selection
   const handleTrackSelect = (track: SpotifyTrack): void => {
@@ -113,6 +116,8 @@ export default function EarwormSearchPage() {
               isLoading={isSearching}
               placeholder="What's stuck in your noggin?"
               className="mb-4"
+              // Remove the internal debounce since we're using our optimized search hook
+              useExternalDebounce={true}
             />
 
             {searchError && (

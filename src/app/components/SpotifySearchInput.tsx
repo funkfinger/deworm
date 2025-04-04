@@ -6,13 +6,14 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useEffect, useRef, useState } from "react";
 
 interface SpotifySearchInputProps {
-  onSearch: (query: string) => Promise<void>;
+  onSearch: (query: string) => Promise<void> | void;
   onTrackSelect: (track: SpotifyTrack) => void;
   results: SpotifyTrack[];
   isLoading?: boolean;
   placeholder?: string;
   className?: string;
   initialValue?: string;
+  useExternalDebounce?: boolean;
 }
 
 export default function SpotifySearchInput({
@@ -23,14 +24,24 @@ export default function SpotifySearchInput({
   placeholder = "What's stuck in your noggin?",
   className = "",
   initialValue = "",
+  useExternalDebounce = false,
 }: SpotifySearchInputProps) {
   const [query, setQuery] = useState(initialValue);
   const [showResults, setShowResults] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const resultsRef = useRef<HTMLDivElement>(null);
 
-  // Debounce search
+  // Debounce search (only if not using external debounce)
   useEffect(() => {
+    // Skip if using external debounce
+    if (useExternalDebounce) {
+      if (query.trim().length >= 2) {
+        onSearch(query);
+      }
+      return;
+    }
+
+    // Internal debounce
     const handler = setTimeout(() => {
       if (query.trim().length >= 2) {
         onSearch(query);
@@ -40,7 +51,7 @@ export default function SpotifySearchInput({
     return () => {
       clearTimeout(handler);
     };
-  }, [query, onSearch]);
+  }, [query, onSearch, useExternalDebounce]);
 
   // Handle click outside to close results
   useEffect(() => {
