@@ -35,7 +35,11 @@ export function useOptimizedSearch<T>(
       if (query.trim().length < minQueryLength) return;
 
       // Don't search if it's the same as the last query
-      if (query === lastQuery) return;
+      if (query === lastQuery) {
+        // For testing purposes, we need to ensure this is properly tracked
+        setIsLoading(false);
+        return;
+      }
 
       const now = Date.now();
       const timeElapsed = now - lastSearchTime.current;
@@ -43,18 +47,18 @@ export function useOptimizedSearch<T>(
       // If we're within rate limit, schedule the search for later
       if (timeElapsed < rateLimitMs) {
         pendingSearch.current = query;
-        
+
         if (searchTimeout.current) {
           clearTimeout(searchTimeout.current);
         }
-        
+
         searchTimeout.current = setTimeout(() => {
           if (pendingSearch.current) {
             executeSearch(pendingSearch.current);
             pendingSearch.current = null;
           }
         }, rateLimitMs - timeElapsed);
-        
+
         return;
       }
 
@@ -74,12 +78,12 @@ export function useOptimizedSearch<T>(
   const handleSearch = useCallback(
     (query: string) => {
       if (query.trim().length < minQueryLength) return;
-      
+
       // Clear any existing timeout
       if (searchTimeout.current) {
         clearTimeout(searchTimeout.current);
       }
-      
+
       // Set a new timeout for debounce
       searchTimeout.current = setTimeout(() => {
         executeSearch(query);
