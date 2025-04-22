@@ -1,42 +1,90 @@
-import React from 'react';
-import { StyleSheet } from 'react-native';
-import ChatBot from '@/components/chat/ChatBot';
-import { ThemedView } from '@/components/ThemedView';
-import { ThemedText } from '@/components/ThemedText';
+import React from "react";
+import {
+  StyleSheet,
+  SafeAreaView,
+  Dimensions,
+  Platform,
+  StatusBar,
+} from "react-native";
+import ChatBot from "@/components/chat/ChatBot";
+import { ThemedView } from "@/components/ThemedView";
+import { ThemedText } from "@/components/ThemedText";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function ChatScreen() {
+  const insets = useSafeAreaInsets();
+
   return (
-    <ThemedView style={styles.container}>
-      <ThemedView style={styles.header}>
-        <ThemedText type="title">De Worm</ThemedText>
-        <ThemedText type="subtitle">Kill the worm!</ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.chatContainer}>
-        <ChatBot 
-          initialMessages={[
+    <SafeAreaView style={styles.safeArea}>
+      <StatusBar barStyle="light-content" />
+      <ThemedView style={styles.container}>
+        <ThemedView
+          style={[
+            styles.header,
             {
-              id: '1',
-              text: "Oh no, I know why you're here! You've got a pesky song stuck in you melon! Well, let's get that taken care of right away!",
-              isUser: false,
-              timestamp: new Date(),
-            }
+              paddingTop:
+                Platform.OS === "ios" ? insets.top : StatusBar.currentHeight,
+            },
           ]}
-        />
+        >
+          <ThemedText type="title" style={styles.title}>
+            De Worm
+          </ThemedText>
+          <ThemedText type="subtitle" style={styles.subtitle}>
+            Kill the worm!
+          </ThemedText>
+        </ThemedView>
+        <ThemedView style={styles.chatContainer}>
+          <ChatBot
+            initialMessages={[
+              {
+                id: "1",
+                text: "Oh no, I know why you're here! You've got a pesky song stuck in you melon! Well, let's get that taken care of right away!",
+                isUser: false,
+                timestamp: new Date(),
+              },
+            ]}
+          />
+        </ThemedView>
       </ThemedView>
-    </ThemedView>
+    </SafeAreaView>
   );
 }
 
+// Get screen dimensions
+const { width, height } = Dimensions.get("window");
+const isIPhoneSize = width <= 428; // iPhone 13 Pro Max width is 428pt
+
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: "#f8f8f8",
+  },
   container: {
     flex: 1,
+    maxWidth: isIPhoneSize ? "100%" : 428, // Limit width on larger screens
+    alignSelf: "center",
+    width: "100%",
   },
   header: {
     padding: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     borderBottomWidth: 1,
-    borderBottomColor: '#ddd',
+    borderBottomColor: "#ddd",
+    backgroundColor: "#007AFF",
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: "bold",
+    color: "white",
+    textAlign: "center",
+  },
+  subtitle: {
+    fontSize: 18,
+    color: "rgba(255, 255, 255, 0.9)",
+    marginTop: 4,
+    textAlign: "center",
   },
   chatContainer: {
     flex: 1,
