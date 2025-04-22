@@ -145,6 +145,7 @@ export default function ChatBot({
         <FlatList
           ref={flatListRef}
           data={messages}
+          testID="chat-message-list"
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => (
             <View>
@@ -183,6 +184,7 @@ export default function ChatBot({
           <View style={styles.inputContainer}>
             <TextInput
               ref={inputRef}
+              testID="chat-input"
               style={[styles.input, isDark ? styles.inputDark : {}]}
               value={inputText}
               onChangeText={setInputText}
@@ -193,6 +195,7 @@ export default function ChatBot({
             />
             <TouchableOpacity
               style={styles.sendButton}
+              testID="send-button"
               onPress={handleSendMessage}
               disabled={inputText.trim() === ""}
             >

@@ -40,6 +40,7 @@ const SpotifyLoginButton: React.FC<SpotifyLoginButtonProps> = ({
   return (
     <TouchableOpacity
       style={styles.button}
+      testID="spotify-login-button"
       onPress={handleLogin}
       disabled={isLoading}
       activeOpacity={0.8}

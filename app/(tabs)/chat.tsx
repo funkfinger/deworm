@@ -26,11 +26,16 @@ export default function ChatScreen() {
                 Platform.OS === "ios" ? insets.top : StatusBar.currentHeight,
             },
           ]}
+          testID="chat-header"
         >
-          <ThemedText type="title" style={styles.title}>
+          <ThemedText type="title" style={styles.title} testID="app-title">
             De Worm
           </ThemedText>
-          <ThemedText type="subtitle" style={styles.subtitle}>
+          <ThemedText
+            type="subtitle"
+            style={styles.subtitle}
+            testID="app-subtitle"
+          >
             Kill the worm!
           </ThemedText>
         </ThemedView>
