@@ -8,12 +8,15 @@ import {
   Platform,
   Keyboard,
   TouchableOpacity,
+  SafeAreaView,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ThemedText } from "../ThemedText";
 import { ThemedView } from "../ThemedView";
 import ChatMessage from "./ChatMessage";
 import SpotifyLoginButton from "../spotify/SpotifyLoginButton";
 import { useSpotifyAuth } from "@/utils/auth/SpotifyAuthContext";
+import { useColorScheme } from "@/hooks/useColorScheme";
 
 export type MessageType = {
   id: string;
@@ -32,6 +35,9 @@ export default function ChatBot({
   initialMessages = [],
   onSendMessage,
 }: ChatBotProps) {
+  const insets = useSafeAreaInsets();
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === "dark";
   const { isLoggedIn, isLoading } = useSpotifyAuth();
   const [messages, setMessages] = useState<MessageType[]>(initialMessages);
   const [inputText, setInputText] = useState("");
@@ -163,29 +169,37 @@ export default function ChatBot({
               )}
             </View>
           )}
-          contentContainerStyle={styles.messageList}
+          contentContainerStyle={[styles.messageList, { paddingBottom: 80 }]} // Add extra padding at the bottom
           showsVerticalScrollIndicator={false}
         />
 
-        <View style={styles.inputContainer}>
-          <TextInput
-            ref={inputRef}
-            style={styles.input}
-            value={inputText}
-            onChangeText={setInputText}
-            placeholder="Type a message..."
-            placeholderTextColor="#888"
-            returnKeyType="send"
-            onSubmitEditing={handleSendMessage}
-          />
-          <TouchableOpacity
-            style={styles.sendButton}
-            onPress={handleSendMessage}
-            disabled={inputText.trim() === ""}
-          >
-            <ThemedText style={styles.sendButtonText}>Send</ThemedText>
-          </TouchableOpacity>
-        </View>
+        <SafeAreaView
+          style={[
+            styles.inputContainerWrapper,
+            { paddingBottom: insets.bottom > 0 ? insets.bottom : 16 },
+            isDark ? styles.inputContainerWrapperDark : {},
+          ]}
+        >
+          <View style={styles.inputContainer}>
+            <TextInput
+              ref={inputRef}
+              style={[styles.input, isDark ? styles.inputDark : {}]}
+              value={inputText}
+              onChangeText={setInputText}
+              placeholder="Type a message..."
+              placeholderTextColor={isDark ? "#888" : "#888"}
+              returnKeyType="send"
+              onSubmitEditing={handleSendMessage}
+            />
+            <TouchableOpacity
+              style={styles.sendButton}
+              onPress={handleSendMessage}
+              disabled={inputText.trim() === ""}
+            >
+              <ThemedText style={styles.sendButtonText}>Send</ThemedText>
+            </TouchableOpacity>
+          </View>
+        </SafeAreaView>
       </ThemedView>
     </KeyboardAvoidingView>
   );
@@ -206,11 +220,22 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     paddingHorizontal: 12,
   },
+  inputContainerWrapper: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: "#fff",
+    borderTopWidth: 1,
+    borderTopColor: "#ddd",
+  },
+  inputContainerWrapperDark: {
+    backgroundColor: "#1c1c1e",
+    borderTopColor: "#38383A",
+  },
   inputContainer: {
     flexDirection: "row",
     padding: 10,
-    borderTopWidth: 1,
-    borderTopColor: "#ddd",
   },
   input: {
     flex: 1,
@@ -220,6 +245,11 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     marginRight: 8,
     fontSize: 16,
+    color: "#000",
+  },
+  inputDark: {
+    backgroundColor: "#2c2c2e",
+    color: "#fff",
   },
   sendButton: {
     justifyContent: "center",
