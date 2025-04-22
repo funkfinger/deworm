@@ -56,6 +56,7 @@ export interface SpotifyTrack {
     images: Array<{ url: string }>;
   };
   uri: string;
+  preview_url?: string; // URL to a 30 second preview of the track
 }
 
 // Create the auth request
@@ -267,6 +268,10 @@ export const searchTracks = async (
 
     if (response.ok) {
       const data = await response.json();
+      // Log the first track to see its structure
+      if (data.tracks.items.length > 0) {
+        console.log("Track preview URL:", data.tracks.items[0].preview_url);
+      }
       return data.tracks.items;
     }
 

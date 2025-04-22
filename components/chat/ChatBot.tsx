@@ -139,6 +139,45 @@ export default function ChatBot({
       `I want to remove "${track.name}" by ${track.artists[0].name} from my head`
     );
     setShowAutocomplete(false);
+
+    // Automatically add the selected track to messages
+    const newMessage: MessageType = {
+      id: Date.now().toString(),
+      text: `I want to remove "${track.name}" by ${track.artists[0].name} from my head`,
+      isUser: true,
+      timestamp: new Date(),
+      selectedTrack: track,
+    };
+
+    setMessages((prevMessages) => [...prevMessages, newMessage]);
+
+    // Automatically trigger bot response
+    setTimeout(() => {
+      const responseText = isLoggedIn
+        ? "Thanks! I'm analyzing your Spotify data to help with that song."
+        : "I'll need Spotify access to help with that song. Please log in first.";
+
+      const botResponse: MessageType = {
+        id: (Date.now() + 1).toString(),
+        text: responseText,
+        isUser: false,
+        timestamp: new Date(),
+        showLoginButton: !isLoggedIn,
+      };
+
+      setMessages((prevMessages) => [...prevMessages, botResponse]);
+    }, 1000);
+
+    // Reset input and selected track
+    setInputText("");
+    setSelectedTrack(null);
+
+    // Call the onSendMessage callback if provided
+    if (onSendMessage) {
+      onSendMessage(
+        `I want to remove "${track.name}" by ${track.artists[0].name} from my head`
+      );
+    }
   };
 
   const handleSendMessage = () => {
