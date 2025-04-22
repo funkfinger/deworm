@@ -82,6 +82,8 @@ const styles = StyleSheet.create({
     maxWidth: "75%",
     flexDirection: "row",
     alignItems: "flex-end",
+    position: "relative",
+    zIndex: 1,
   },
   userMessageContainer: {
     alignSelf: "flex-end",

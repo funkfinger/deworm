@@ -205,26 +205,28 @@ export default function ChatBot({
                 <SelectedSong track={item.selectedTrack} />
               )}
               {item.showLoginButton && !isLoggedIn && (
-                <View style={styles.loginButtonContainer}>
-                  <SpotifyLoginButton
-                    onLoginSuccess={() => {
-                      const successMessage: MessageType = {
-                        id: Date.now().toString(),
-                        text: "Great! You're now logged in with Spotify. Let's get to work on removing that song!",
-                        isUser: false,
-                        timestamp: new Date(),
-                      };
-                      setMessages((prevMessages) => [
-                        ...prevMessages,
-                        successMessage,
-                      ]);
-                    }}
-                  />
+                <View style={styles.loginButtonWrapper}>
+                  <View style={styles.loginButtonContainer}>
+                    <SpotifyLoginButton
+                      onLoginSuccess={() => {
+                        const successMessage: MessageType = {
+                          id: Date.now().toString(),
+                          text: "Great! You're now logged in with Spotify. Let's get to work on removing that song!",
+                          isUser: false,
+                          timestamp: new Date(),
+                        };
+                        setMessages((prevMessages) => [
+                          ...prevMessages,
+                          successMessage,
+                        ]);
+                      }}
+                    />
+                  </View>
                 </View>
               )}
             </View>
           )}
-          contentContainerStyle={[styles.messageList, { paddingBottom: 80 }]} // Add extra padding at the bottom
+          contentContainerStyle={[styles.messageList, { paddingBottom: 120 }]} // Add extra padding at the bottom
           showsVerticalScrollIndicator={false}
         />
 
@@ -284,6 +286,7 @@ const styles = StyleSheet.create({
   messageList: {
     paddingVertical: 16,
     paddingHorizontal: 12,
+    paddingBottom: 30, // Extra padding at the bottom for login button
   },
   inputContainerWrapper: {
     position: "absolute",
@@ -327,10 +330,27 @@ const styles = StyleSheet.create({
     color: "white",
     fontWeight: "bold",
   },
+  loginButtonWrapper: {
+    width: "100%",
+    alignItems: "center",
+    justifyContent: "center",
+    marginVertical: 15,
+    paddingVertical: 15,
+    zIndex: 10,
+    position: "relative",
+    backgroundColor: "rgba(0, 122, 255, 0.05)",
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "rgba(0, 122, 255, 0.1)",
+  },
   loginButtonContainer: {
     alignItems: "center",
     justifyContent: "center",
     marginVertical: 10,
     paddingHorizontal: 16,
+    paddingTop: 5,
+    paddingBottom: 5,
+    zIndex: 20,
+    position: "relative",
   },
 });

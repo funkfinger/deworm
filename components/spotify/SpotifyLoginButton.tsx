@@ -68,18 +68,21 @@ const SpotifyLoginButton: React.FC<SpotifyLoginButtonProps> = ({
 const styles = StyleSheet.create({
   button: {
     backgroundColor: "#1DB954", // Spotify green
-    paddingVertical: 12,
-    paddingHorizontal: 24,
+    paddingVertical: 14,
+    paddingHorizontal: 28,
     borderRadius: 24,
     alignItems: "center",
     justifyContent: "center",
-    marginVertical: 10,
-    minWidth: 200,
+    marginVertical: 15,
+    minWidth: 220,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
+    elevation: 5,
+    zIndex: 20,
+    borderWidth: 2,
+    borderColor: "rgba(255, 255, 255, 0.2)",
   },
   buttonContent: {
     flexDirection: "row",
@@ -88,9 +91,12 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     color: "#FFFFFF",
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: "bold",
     marginLeft: 8,
+    textShadowColor: "rgba(0, 0, 0, 0.2)",
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
   icon: {
     width: 24,
