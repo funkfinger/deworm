@@ -249,7 +249,7 @@ export const getClientId = (): string => {
 export const searchTracks = async (
   query: string,
   accessToken: string,
-  limit: number = 5
+  limit: number = 3
 ): Promise<SpotifyTrack[]> => {
   try {
     if (!query.trim()) return [];

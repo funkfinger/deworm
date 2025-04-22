@@ -72,23 +72,25 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   header: {
-    padding: 16,
+    paddingHorizontal: 16,
+    paddingBottom: 10,
     alignItems: "center",
     justifyContent: "center",
     borderBottomWidth: 1,
     borderBottomColor: "#ddd",
     backgroundColor: "#007AFF",
+    zIndex: 1, // Lower zIndex than the autocomplete dropdown
   },
   title: {
-    fontSize: 28,
+    fontSize: 24, // Reduced font size
     fontWeight: "bold",
     color: "white",
     textAlign: "center",
   },
   subtitle: {
-    fontSize: 18,
+    fontSize: 16, // Reduced font size
     color: "rgba(255, 255, 255, 0.9)",
-    marginTop: 4,
+    marginTop: 2, // Reduced margin
     textAlign: "center",
   },
   chatContainer: {

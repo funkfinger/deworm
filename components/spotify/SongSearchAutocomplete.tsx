@@ -33,10 +33,7 @@ export default function SongSearchAutocomplete({
 
   return (
     <View
-      style={[
-        styles.container,
-        isDark ? styles.containerDark : {},
-      ]}
+      style={[styles.container, isDark ? styles.containerDark : {}]}
       testID="song-autocomplete"
     >
       {isLoading ? (
@@ -96,7 +93,7 @@ const styles = StyleSheet.create({
     bottom: 70,
     left: 10,
     right: 10,
-    maxHeight: 300,
+    maxHeight: 200, // Reduced height to show fewer items
     backgroundColor: "#fff",
     borderRadius: 8,
     shadowColor: "#000",
@@ -106,13 +103,14 @@ const styles = StyleSheet.create({
     elevation: 3,
     borderWidth: 1,
     borderColor: "#ddd",
+    zIndex: 1000, // Ensure it appears above other elements
   },
   containerDark: {
     backgroundColor: "#1c1c1e",
     borderColor: "#38383A",
   },
   list: {
-    maxHeight: 300,
+    maxHeight: 200, // Reduced height to match container
   },
   trackItem: {
     flexDirection: "row",
