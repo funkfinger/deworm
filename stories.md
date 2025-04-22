@@ -5,6 +5,7 @@
 - [x] As a user I should see assets/images/mascot.png as the chatbot avatar.
 - [x] As a user I should see my Spotify avatar as my avatar.
 - [x] As a user logged into Spotify I should be able to use the text entry chat area to enter the name of a song. This should autofill with a dropdown box of possible matches. The user should be able to select a song from the dropdown list. The user should see the album artwork, title, and artist of the song.
+- [x] As a user, I would like the song to display and play as soon as I select it from the dropdown list without having to click the "Send" button.
 
 ## Notes:
 
