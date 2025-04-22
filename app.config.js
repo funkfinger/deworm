@@ -19,6 +19,13 @@ export default {
     ios: {
       supportsTablet: true,
       bundleIdentifier: "com.funkfinger.deworm",
+      infoPlist: {
+        CFBundleURLTypes: [
+          {
+            CFBundleURLSchemes: ["deworm"],
+          },
+        ],
+      },
     },
     android: {
       adaptiveIcon: {
