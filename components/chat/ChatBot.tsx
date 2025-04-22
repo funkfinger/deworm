@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import {
   StyleSheet,
   View,
@@ -9,14 +9,19 @@ import {
   Keyboard,
   TouchableOpacity,
   SafeAreaView,
+  ActivityIndicator,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ThemedText } from "../ThemedText";
 import { ThemedView } from "../ThemedView";
 import ChatMessage from "./ChatMessage";
 import SpotifyLoginButton from "../spotify/SpotifyLoginButton";
+import SongSearchAutocomplete from "../spotify/SongSearchAutocomplete";
+import SelectedSong from "../spotify/SelectedSong";
 import { useSpotifyAuth } from "@/utils/auth/SpotifyAuthContext";
 import { useColorScheme } from "@/hooks/useColorScheme";
+import { searchTracks, SpotifyTrack } from "@/utils/auth/spotify";
+import { debounce } from "lodash";
 
 export type MessageType = {
   id: string;
@@ -24,6 +29,7 @@ export type MessageType = {
   isUser: boolean;
   timestamp: Date;
   showLoginButton?: boolean;
+  selectedTrack?: SpotifyTrack;
 };
 
 interface ChatBotProps {
@@ -38,10 +44,14 @@ export default function ChatBot({
   const insets = useSafeAreaInsets();
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
-  const { isLoggedIn, isLoading } = useSpotifyAuth();
+  const { isLoggedIn, isLoading, authData } = useSpotifyAuth();
   const [messages, setMessages] = useState<MessageType[]>(initialMessages);
   const [inputText, setInputText] = useState("");
   const [hasShownAuthMessage, setHasShownAuthMessage] = useState(false);
+  const [searchResults, setSearchResults] = useState<SpotifyTrack[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [showAutocomplete, setShowAutocomplete] = useState(false);
+  const [selectedTrack, setSelectedTrack] = useState<SpotifyTrack | null>(null);
   const flatListRef = useRef<FlatList>(null);
   const inputRef = useRef<TextInput>(null);
 
@@ -92,6 +102,45 @@ export default function ChatBot({
     }
   }, [isLoading, isLoggedIn, hasShownAuthMessage, initialMessages.length]);
 
+  // Debounced search function
+  const debouncedSearch = useCallback(
+    debounce(async (query: string) => {
+      if (!isLoggedIn || !authData?.accessToken || query.length < 2) {
+        setSearchResults([]);
+        setIsSearching(false);
+        return;
+      }
+
+      setIsSearching(true);
+      const results = await searchTracks(query, authData.accessToken);
+      setSearchResults(results);
+      setIsSearching(false);
+    }, 500),
+    [isLoggedIn, authData]
+  );
+
+  // Handle input change
+  const handleInputChange = (text: string) => {
+    setInputText(text);
+
+    if (isLoggedIn && text.length >= 2) {
+      setShowAutocomplete(true);
+      debouncedSearch(text);
+    } else {
+      setShowAutocomplete(false);
+      setSearchResults([]);
+    }
+  };
+
+  // Handle track selection
+  const handleSelectTrack = (track: SpotifyTrack) => {
+    setSelectedTrack(track);
+    setInputText(
+      `I want to remove "${track.name}" by ${track.artists[0].name} from my head`
+    );
+    setShowAutocomplete(false);
+  };
+
   const handleSendMessage = () => {
     if (inputText.trim() === "") return;
 
@@ -100,10 +149,12 @@ export default function ChatBot({
       text: inputText.trim(),
       isUser: true,
       timestamp: new Date(),
+      selectedTrack: selectedTrack || undefined,
     };
 
     setMessages([...messages, newMessage]);
     setInputText("");
+    setSelectedTrack(null);
 
     // Call the onSendMessage callback if provided
     if (onSendMessage) {
@@ -150,6 +201,9 @@ export default function ChatBot({
           renderItem={({ item }) => (
             <View>
               <ChatMessage message={item} />
+              {item.selectedTrack && (
+                <SelectedSong track={item.selectedTrack} />
+              )}
               {item.showLoginButton && !isLoggedIn && (
                 <View style={styles.loginButtonContainer}>
                   <SpotifyLoginButton
@@ -187,7 +241,7 @@ export default function ChatBot({
               testID="chat-input"
               style={[styles.input, isDark ? styles.inputDark : {}]}
               value={inputText}
-              onChangeText={setInputText}
+              onChangeText={handleInputChange}
               placeholder="Type a message..."
               placeholderTextColor={isDark ? "#888" : "#888"}
               returnKeyType="send"
@@ -202,6 +256,14 @@ export default function ChatBot({
               <ThemedText style={styles.sendButtonText}>Send</ThemedText>
             </TouchableOpacity>
           </View>
+
+          {/* Song search autocomplete */}
+          <SongSearchAutocomplete
+            tracks={searchResults}
+            isLoading={isSearching}
+            onSelectTrack={handleSelectTrack}
+            visible={showAutocomplete && isLoggedIn}
+          />
         </SafeAreaView>
       </ThemedView>
     </KeyboardAvoidingView>

@@ -47,6 +47,17 @@ export interface SpotifyUserProfile {
   uri: string;
 }
 
+export interface SpotifyTrack {
+  id: string;
+  name: string;
+  artists: Array<{ name: string }>;
+  album: {
+    name: string;
+    images: Array<{ url: string }>;
+  };
+  uri: string;
+}
+
 // Create the auth request
 const createAuthRequest = () => {
   return new AuthSession.AuthRequest({
@@ -232,4 +243,37 @@ export const getRedirectUri = (): string => {
 // Get the Spotify client ID
 export const getClientId = (): string => {
   return CLIENT_ID;
+};
+
+// Search for tracks on Spotify
+export const searchTracks = async (
+  query: string,
+  accessToken: string,
+  limit: number = 5
+): Promise<SpotifyTrack[]> => {
+  try {
+    if (!query.trim()) return [];
+
+    const response = await fetch(
+      `https://api.spotify.com/v1/search?q=${encodeURIComponent(
+        query
+      )}&type=track&limit=${limit}`,
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      }
+    );
+
+    if (response.ok) {
+      const data = await response.json();
+      return data.tracks.items;
+    }
+
+    console.error("Error searching tracks:", response.status);
+    return [];
+  } catch (error) {
+    console.error("Error searching tracks:", error);
+    return [];
+  }
 };
