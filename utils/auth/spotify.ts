@@ -1,31 +1,31 @@
-import * as AuthSession from 'expo-auth-session';
-import * as WebBrowser from 'expo-web-browser';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Platform } from 'react-native';
+import * as AuthSession from "expo-auth-session";
+import * as WebBrowser from "expo-web-browser";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Platform } from "react-native";
+import { SPOTIFY_CLIENT_ID } from "../env";
 
 // Register the redirect URI for web browser
 WebBrowser.maybeCompleteAuthSession();
 
-// Spotify API credentials
-// Note: In a production app, these should be environment variables
-const CLIENT_ID = 'YOUR_SPOTIFY_CLIENT_ID'; // Replace with your Spotify Client ID
+// Spotify API credentials from environment variables
+const CLIENT_ID = SPOTIFY_CLIENT_ID;
 const REDIRECT_URI = AuthSession.makeRedirectUri({
-  scheme: 'deworm',
-  path: 'spotify-auth-callback',
+  scheme: "deworm",
+  path: "spotify-auth-callback",
 });
 
 // Scopes for Spotify API access
 const SCOPES = [
-  'user-read-email',
-  'user-read-private',
-  'user-read-recently-played',
-  'user-top-read',
-  'user-library-read',
+  "user-read-email",
+  "user-read-private",
+  "user-read-recently-played",
+  "user-top-read",
+  "user-library-read",
 ];
 
 // Storage keys
-const AUTH_STORAGE_KEY = 'spotify_auth_data';
-const USER_STORAGE_KEY = 'spotify_user_data';
+const AUTH_STORAGE_KEY = "spotify_auth_data";
+const USER_STORAGE_KEY = "spotify_user_data";
 
 // Types
 export interface SpotifyAuthData {
@@ -62,7 +62,7 @@ const saveAuthData = async (authData: SpotifyAuthData) => {
     await AsyncStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(authData));
     return true;
   } catch (error) {
-    console.error('Error saving auth data:', error);
+    console.error("Error saving auth data:", error);
     return false;
   }
 };
@@ -73,7 +73,7 @@ const saveUserProfile = async (userProfile: SpotifyUserProfile) => {
     await AsyncStorage.setItem(USER_STORAGE_KEY, JSON.stringify(userProfile));
     return true;
   } catch (error) {
-    console.error('Error saving user profile:', error);
+    console.error("Error saving user profile:", error);
     return false;
   }
 };
@@ -84,19 +84,19 @@ export const getAuthData = async (): Promise<SpotifyAuthData | null> => {
     const authDataString = await AsyncStorage.getItem(AUTH_STORAGE_KEY);
     if (authDataString) {
       const authData = JSON.parse(authDataString) as SpotifyAuthData;
-      
+
       // Check if token is expired
       if (authData.expiresAt < Date.now()) {
         // Token is expired, clear it
         await clearAuthData();
         return null;
       }
-      
+
       return authData;
     }
     return null;
   } catch (error) {
-    console.error('Error getting auth data:', error);
+    console.error("Error getting auth data:", error);
     return null;
   }
 };
@@ -110,7 +110,7 @@ export const getUserProfile = async (): Promise<SpotifyUserProfile | null> => {
     }
     return null;
   } catch (error) {
-    console.error('Error getting user profile:', error);
+    console.error("Error getting user profile:", error);
     return null;
   }
 };
@@ -122,7 +122,7 @@ export const clearAuthData = async (): Promise<boolean> => {
     await AsyncStorage.removeItem(USER_STORAGE_KEY);
     return true;
   } catch (error) {
-    console.error('Error clearing auth data:', error);
+    console.error("Error clearing auth data:", error);
     return false;
   }
 };
@@ -134,23 +134,25 @@ export const isAuthenticated = async (): Promise<boolean> => {
 };
 
 // Fetch user profile from Spotify API
-export const fetchUserProfile = async (accessToken: string): Promise<SpotifyUserProfile | null> => {
+export const fetchUserProfile = async (
+  accessToken: string
+): Promise<SpotifyUserProfile | null> => {
   try {
-    const response = await fetch('https://api.spotify.com/v1/me', {
+    const response = await fetch("https://api.spotify.com/v1/me", {
       headers: {
         Authorization: `Bearer ${accessToken}`,
       },
     });
-    
+
     if (response.ok) {
       const userProfile = await response.json();
       await saveUserProfile(userProfile);
       return userProfile;
     }
-    
+
     return null;
   } catch (error) {
-    console.error('Error fetching user profile:', error);
+    console.error("Error fetching user profile:", error);
     return null;
   }
 };
@@ -165,51 +167,52 @@ export const loginWithSpotify = async (): Promise<{
   try {
     const authRequest = createAuthRequest();
     const result = await authRequest.promptAsync({
-      authorizationEndpoint: 'https://accounts.spotify.com/authorize',
+      authorizationEndpoint: "https://accounts.spotify.com/authorize",
     });
-    
-    if (result.type === 'success') {
-      const { access_token, refresh_token, expires_in, token_type, scope } = result.params;
-      
+
+    if (result.type === "success") {
+      const { access_token, refresh_token, expires_in, token_type, scope } =
+        result.params;
+
       // Calculate expiration time
       const expiresAt = Date.now() + expires_in * 1000;
-      
+
       const authData: SpotifyAuthData = {
         accessToken: access_token,
-        refreshToken: refresh_token || '',
+        refreshToken: refresh_token || "",
         expiresIn: expires_in,
         expiresAt,
         tokenType: token_type,
         scope,
       };
-      
+
       // Save auth data
       await saveAuthData(authData);
-      
+
       // Fetch user profile
       const userProfile = await fetchUserProfile(access_token);
-      
+
       return {
         success: true,
         authData,
         userProfile: userProfile || undefined,
       };
-    } else if (result.type === 'error') {
+    } else if (result.type === "error") {
       return {
         success: false,
-        error: result.error?.message || 'Authentication failed',
+        error: result.error?.message || "Authentication failed",
       };
     } else {
       return {
         success: false,
-        error: 'Authentication was cancelled or failed',
+        error: "Authentication was cancelled or failed",
       };
     }
   } catch (error) {
-    console.error('Error during Spotify login:', error);
+    console.error("Error during Spotify login:", error);
     return {
       success: false,
-      error: 'An unexpected error occurred during authentication',
+      error: "An unexpected error occurred during authentication",
     };
   }
 };
