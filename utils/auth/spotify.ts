@@ -10,9 +10,11 @@ WebBrowser.maybeCompleteAuthSession();
 // Spotify API credentials from environment variables
 const CLIENT_ID = SPOTIFY_CLIENT_ID;
 const REDIRECT_URI = AuthSession.makeRedirectUri({
-  scheme: "deworm",
+  scheme: "exp",
   path: "spotify-auth-callback",
 });
+
+console.log("Spotify Redirect URI:", REDIRECT_URI);
 
 // Scopes for Spotify API access
 const SCOPES = [

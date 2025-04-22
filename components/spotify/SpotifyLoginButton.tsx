@@ -8,6 +8,8 @@ import {
   Image,
 } from "react-native";
 import { useSpotifyAuth } from "@/utils/auth/SpotifyAuthContext";
+import { SPOTIFY_CLIENT_ID } from "@/utils/env";
+import { getClientId, getRedirectUri } from "@/utils/auth/spotify";
 
 interface SpotifyLoginButtonProps {
   onLoginSuccess?: () => void;
@@ -19,6 +21,11 @@ const SpotifyLoginButton: React.FC<SpotifyLoginButtonProps> = ({
   onLoginFailure,
 }) => {
   const { login, isLoading, error } = useSpotifyAuth();
+
+  // Debug information
+  console.log("SPOTIFY_CLIENT_ID from env:", SPOTIFY_CLIENT_ID);
+  console.log("SPOTIFY_CLIENT_ID from getClientId():", getClientId());
+  console.log("REDIRECT_URI:", getRedirectUri());
 
   const handleLogin = async () => {
     const success = await login();
@@ -44,6 +51,14 @@ const SpotifyLoginButton: React.FC<SpotifyLoginButtonProps> = ({
           <View style={styles.icon} />
           <Text style={styles.buttonText}>Log into Spotify</Text>
         </View>
+      )}
+      {__DEV__ && (
+        <Text style={styles.debugText}>
+          Client ID:{" "}
+          {SPOTIFY_CLIENT_ID
+            ? SPOTIFY_CLIENT_ID.substring(0, 4) + "..."
+            : "Not set"}
+        </Text>
       )}
     </TouchableOpacity>
   );
@@ -82,6 +97,12 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     backgroundColor: "#FFFFFF",
     marginRight: 8,
+  },
+  debugText: {
+    color: "#FFFFFF",
+    fontSize: 10,
+    marginTop: 4,
+    opacity: 0.7,
   },
 });
 
