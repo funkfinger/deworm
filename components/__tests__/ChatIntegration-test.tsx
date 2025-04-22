@@ -3,21 +3,32 @@ import { render, fireEvent, waitFor, act } from "@testing-library/react-native";
 import ChatBot from "../chat/ChatBot";
 import { SpotifyAuthProvider } from "@/utils/auth/SpotifyAuthContext";
 
-// Mock the Spotify auth context with different states
-const createMockSpotifyAuth = (isLoggedIn: boolean, isLoading: boolean) => {
-  jest.mock("@/utils/auth/SpotifyAuthContext", () => {
-    const originalModule = jest.requireActual("@/utils/auth/SpotifyAuthContext");
+// Mock the Spotify auth context
+jest.mock("@/utils/auth/SpotifyAuthContext", () => {
+  return {
+    SpotifyAuthProvider: ({ children }: { children: React.ReactNode }) => (
+      <>{children}</>
+    ),
+    useSpotifyAuth: () => ({
+      isLoggedIn: false,
+      isLoading: false,
+      login: jest.fn().mockResolvedValue(true),
+      error: null,
+    }),
+  };
+});
 
-    return {
-      ...originalModule,
-      useSpotifyAuth: () => ({
-        isLoggedIn,
-        isLoading,
-        login: jest.fn().mockResolvedValue(true),
-        error: null,
-      }),
-    };
-  });
+// Helper to set mock implementation for specific tests
+const setMockSpotifyAuth = (isLoggedIn: boolean, isLoading: boolean) => {
+  const mockUseSpotifyAuth = jest.requireMock(
+    "@/utils/auth/SpotifyAuthContext"
+  ).useSpotifyAuth;
+  mockUseSpotifyAuth.mockImplementation(() => ({
+    isLoggedIn,
+    isLoading,
+    login: jest.fn().mockResolvedValue(true),
+    error: null,
+  }));
 };
 
 describe("Chat Integration", () => {
@@ -31,8 +42,8 @@ describe("Chat Integration", () => {
   });
 
   it("shows Spotify login message when user is not logged in", async () => {
-    // Mock not logged in state
-    createMockSpotifyAuth(false, false);
+    // Set mock for not logged in state
+    setMockSpotifyAuth(false, false);
 
     const { getByText, queryByText } = render(
       <SpotifyAuthProvider>
@@ -75,8 +86,8 @@ describe("Chat Integration", () => {
   });
 
   it("shows welcome back message when user is logged in", async () => {
-    // Mock logged in state
-    createMockSpotifyAuth(true, false);
+    // Set mock for logged in state
+    setMockSpotifyAuth(true, false);
 
     const { getByText, queryByText } = render(
       <SpotifyAuthProvider>
@@ -119,8 +130,8 @@ describe("Chat Integration", () => {
   });
 
   it("handles user sending a message and getting a response when logged in", async () => {
-    // Mock logged in state
-    createMockSpotifyAuth(true, false);
+    // Set mock for logged in state
+    setMockSpotifyAuth(true, false);
 
     const { getByText, getByPlaceholderText } = render(
       <SpotifyAuthProvider>
@@ -143,7 +154,9 @@ describe("Chat Integration", () => {
     });
 
     // Set hasShownAuthMessage to true to allow bot responses
-    jest.spyOn(React, "useState").mockImplementationOnce(() => [true, jest.fn()]);
+    jest
+      .spyOn(React, "useState")
+      .mockImplementationOnce(() => [true, jest.fn()]);
 
     // Type and send a message
     const input = getByPlaceholderText("Type a message...");
@@ -161,14 +174,16 @@ describe("Chat Integration", () => {
     // Bot response should appear
     await waitFor(() => {
       expect(
-        getByText("Thanks! I'm analyzing your Spotify data to help with that song.")
+        getByText(
+          "Thanks! I'm analyzing your Spotify data to help with that song."
+        )
       ).toBeTruthy();
     });
   });
 
   it("handles user sending a message and getting a response when not logged in", async () => {
-    // Mock not logged in state
-    createMockSpotifyAuth(false, false);
+    // Set mock for not logged in state
+    setMockSpotifyAuth(false, false);
 
     const { getByText, getByPlaceholderText } = render(
       <SpotifyAuthProvider>
@@ -191,7 +206,9 @@ describe("Chat Integration", () => {
     });
 
     // Set hasShownAuthMessage to true to allow bot responses
-    jest.spyOn(React, "useState").mockImplementationOnce(() => [true, jest.fn()]);
+    jest
+      .spyOn(React, "useState")
+      .mockImplementationOnce(() => [true, jest.fn()]);
 
     // Type and send a message
     const input = getByPlaceholderText("Type a message...");
@@ -209,7 +226,9 @@ describe("Chat Integration", () => {
     // Bot response should appear
     await waitFor(() => {
       expect(
-        getByText("I'll need Spotify access to help with that song. Please log in first.")
+        getByText(
+          "I'll need Spotify access to help with that song. Please log in first."
+        )
       ).toBeTruthy();
     });
   });
