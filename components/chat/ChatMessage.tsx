@@ -4,6 +4,7 @@ import { ThemedText } from "../ThemedText";
 import { ThemedView } from "../ThemedView";
 import { MessageType } from "./ChatBot";
 import { useColorScheme } from "@/hooks/useColorScheme";
+import { useSpotifyAuth } from "@/utils/auth/SpotifyAuthContext";
 
 interface ChatMessageProps {
   message: MessageType;
@@ -13,6 +14,7 @@ export default function ChatMessage({ message }: ChatMessageProps) {
   const isUser = message.isUser;
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
+  const { userProfile } = useSpotifyAuth();
 
   return (
     <View
@@ -22,7 +24,11 @@ export default function ChatMessage({ message }: ChatMessageProps) {
       ]}
     >
       {!isUser && (
-        <View style={[styles.avatar, { backgroundColor: "#007AFF" }]} />
+        <Image
+          source={require("@/assets/images/mascot.png")}
+          style={styles.avatar}
+          resizeMode="cover"
+        />
       )}
       <ThemedView
         style={[
@@ -56,7 +62,15 @@ export default function ChatMessage({ message }: ChatMessageProps) {
         </ThemedText>
       </ThemedView>
       {isUser && (
-        <View style={[styles.avatar, { backgroundColor: "#34C759" }]} />
+        <Image
+          source={
+            userProfile?.images?.[0]?.url
+              ? { uri: userProfile.images[0].url }
+              : require("@/assets/images/user-placeholder.png")
+          }
+          style={styles.avatar}
+          resizeMode="cover"
+        />
       )}
     </View>
   );
@@ -78,10 +92,13 @@ const styles = StyleSheet.create({
     flexDirection: "row",
   },
   avatar: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     marginHorizontal: 8,
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: "#E5E5EA",
   },
   messageBubble: {
     borderRadius: 20,
