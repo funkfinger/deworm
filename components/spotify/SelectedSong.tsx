@@ -2,7 +2,7 @@ import React from "react";
 import { StyleSheet, View, Text, Image } from "react-native";
 import { SpotifyTrack } from "@/utils/auth/spotify";
 import { useColorScheme } from "@/hooks/useColorScheme";
-import SpotifyPlayer from "./SpotifyPlayer";
+import SpotifyConnectPlayer from "./SpotifyConnectPlayer";
 
 interface SelectedSongProps {
   track: SpotifyTrack;
@@ -34,8 +34,8 @@ export default function SelectedSong({ track }: SelectedSongProps) {
         </Text>
       </View>
 
-      {/* Spotify Player */}
-      <SpotifyPlayer track={track} />
+      {/* Spotify Connect Player */}
+      <SpotifyConnectPlayer track={track} />
     </View>
   );
 }

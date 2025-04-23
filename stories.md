@@ -6,6 +6,7 @@
 - [x] As a user I should see my Spotify avatar as my avatar.
 - [x] As a user logged into Spotify I should be able to use the text entry chat area to enter the name of a song. This should autofill with a dropdown box of possible matches. The user should be able to select a song from the dropdown list. The user should see the album artwork, title, and artist of the song.
 - [x] As a user, I would like the song to display and play as soon as I select it from the dropdown list without having to click the "Send" button.
+- [x] As a user, I should be able to song without using the Spotify preview option as that is deprecated. I will need to listen to the song using the Spotify Connect API instead of the Web Playback SDK, as the latter is not compatible with React Native.
 
 ## Notes:
 
